@@ -9,11 +9,14 @@ router = APIRouter()
 
 @router.post("/", response_model=ClientOut)
 def create_client(payload: ClientCreate, db: Session = Depends(get_db)):
-    # check if ref_personne exists
+    # Check if ref_personne exists
     existing = db.query(Client).filter(Client.ref_personne == payload.ref_personne).first()
     if existing:
         raise HTTPException(400, "Client already exists")
-    client = Client(ref_personne=payload.ref_personne, recommended_products=payload.recommended_products)
+    client = Client(
+        ref_personne=payload.ref_personne,
+        recommended_products=payload.recommended_products
+    )
     db.add(client)
     db.commit()
     db.refresh(client)

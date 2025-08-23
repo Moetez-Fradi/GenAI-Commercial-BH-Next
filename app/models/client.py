@@ -5,6 +5,5 @@ from app.db.base import Base
 class Client(Base):
     __tablename__ = "clients"
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    ref_personne = Column(String(64), unique=True, nullable=False, index=True)
+    ref_personne = Column(String(64), primary_key=True, index=True)
     recommended_products = Column(JSON, nullable=True)

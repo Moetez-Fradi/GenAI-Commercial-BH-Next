@@ -9,7 +9,6 @@ class ClientCreate(ClientBase):
     pass
 
 class ClientOut(ClientBase):
-    id: int
     class Config:
         from_attributes = True
 
