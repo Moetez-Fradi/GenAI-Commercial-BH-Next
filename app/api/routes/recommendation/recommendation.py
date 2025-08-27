@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional,Dict
 import pandas as pd
 import os
 
@@ -11,6 +11,7 @@ from app.core.data_cleaning import (
 from app.services.scoring_services import scoring_service
 from app.services.batch_processor import batch_processor
 from app.services.recommendation_service import recommendation_service
+from app.utils.sql_transformer import sql_transformer
 from app.core.config import logger
 
 router = APIRouter()
@@ -20,7 +21,15 @@ class ScoringRequest(BaseModel):
     df_clients_path: str = "data/raw/clients.parquet"
     df_business_path: str = "data/raw/businesses.parquet"
     df_products_path: str = "data/raw/products.parquet"
-    save_path: Optional[str] = "data/processed/scores.parquet"
+    save_individual_path: Optional[str] = "data/processed/individual_scores.parquet"
+    save_business_path: Optional[str] = "data/processed/business_scores.parquet"
+    
+class SQLConversionRequest(BaseModel):
+    file_mappings: List[Dict[str, str]]  # [{"parquet_path": "path", "table_name": "name"}]
+    columns_mapping: Optional[Dict[str, List[str]]] = None  # {"table_name": ["col1", "col2"]}
+    where_conditions: Optional[Dict[str, str]] = None  # {"table_name": "column > value"}
+    generate_ddl: bool = False
+    primary_keys: Optional[Dict[str, str]] = None  # {"table_name": "primary_key_column"}
 
 class RecommendationRequest(BaseModel):
     df_sinistres_path: Optional[str] = "data/raw/claims.parquet"
@@ -59,16 +68,16 @@ async def score_clients_endpoint(request: ScoringRequest, background_tasks: Back
         scoring_service.df_products = df_products_clean
         
         # Save if path provided
-        if request.save_path:
-            background_tasks.add_task(scoring_service.save_scores, request.save_path)
-            logger.info(f"Scores will be saved to: {request.save_path}")
+        if request.save_individual_path or request.save_business_path:
+            background_tasks.add_task(scoring_service.save_scores, request.save_individual_path,request.save_business_path)
+            logger.info(f"Scores will be saved to: {request.save_individual_path} and {request.save_business_path}")
         
         return {
             "message": "Clients scored successfully",
             "individual_clients": len(scored_individuals),
             "business_clients": len(scored_business),
-            "total_clients": len(scored_individuals) + len(scored_business),
-            "scores_saved_to": request.save_path
+            "individual_scores_path": request.save_individual_path,
+            "business_scores_path": request.save_business_path
         }
         
     except FileNotFoundError as e:
@@ -256,4 +265,76 @@ async def get_data_structure():
         
     except Exception as e:
         logger.error(f"Error checking data structure: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.post("/data/convert-to-sql")
+async def convert_to_sql_endpoint(request: SQLConversionRequest):
+    """Convert Parquet files to SQL INSERT statements with column selection"""
+    try:
+        # Prepare file mappings
+        file_mappings = []
+        for mapping in request.file_mappings:
+            file_mappings.append((mapping['parquet_path'], mapping['table_name']))
+        
+        # Convert to SQL
+        results = sql_transformer.batch_convert_to_sql(
+            file_mappings=file_mappings,
+            columns_mapping=request.columns_mapping,
+            where_conditions=request.where_conditions
+        )
+        
+        # Generate DDL if requested
+        ddl_results = {}
+        if request.generate_ddl and request.primary_keys:
+            for mapping in request.file_mappings:
+                table_name = mapping['table_name']
+                parquet_path = mapping['parquet_path']
+                primary_key = request.primary_keys.get(table_name)
+                
+                if primary_key:
+                    try:
+                        columns = request.columns_mapping.get(table_name) if request.columns_mapping else None
+                        ddl_path = sql_transformer.generate_table_ddl(
+                            parquet_path, table_name, columns, primary_key
+                        )
+                        ddl_results[table_name] = {'ddl_path': ddl_path, 'status': 'success'}
+                    except Exception as e:
+                        ddl_results[table_name] = {'ddl_path': None, 'status': 'error', 'error': str(e)}
+        
+        return {
+            "message": "SQL conversion completed",
+            "insert_results": results,
+            "ddl_results": ddl_results if ddl_results else "DDL generation skipped",
+            "output_directory": sql_transformer.output_dir
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in convert-to-sql endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/data/sql-files")
+async def list_sql_files():
+    """List all generated SQL files"""
+    try:
+        sql_files = []
+        if os.path.exists(sql_transformer.output_dir):
+            for file in os.listdir(sql_transformer.output_dir):
+                if file.endswith('.sql'):
+                    file_path = os.path.join(sql_transformer.output_dir, file)
+                    file_size = os.path.getsize(file_path)
+                    sql_files.append({
+                        'filename': file,
+                        'path': file_path,
+                        'size_bytes': file_size,
+                        'size_mb': round(file_size / (1024 * 1024), 2)
+                    })
+        
+        return {
+            "sql_directory": sql_transformer.output_dir,
+            "files": sql_files,
+            "total_files": len(sql_files)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error listing SQL files: {e}")
         raise HTTPException(status_code=500, detail=str(e))
