@@ -146,6 +146,10 @@ ENV/
 env.bak/
 venv.bak/
 
+# frontend
+app/frontend/.vite
+app/frontend/node_modules
+
 # Spyder project settings
 .spyderproject
 .spyproject
