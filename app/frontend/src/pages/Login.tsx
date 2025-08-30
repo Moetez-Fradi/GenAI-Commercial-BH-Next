@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { motion } from "framer-motion";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -16,11 +17,7 @@ export default function Login() {
     setError("");
 
     try {
-      // 👉 TODO: Replace with FastAPI call
-      // Example: const res = await fetch("/api/login", {...})
-      // const { token } = await res.json();
-
-      // Mock login
+      // 👉 TODO: replace with FastAPI call
       if (email === "admin@test.com" && password === "1234") {
         login("fake-jwt-token");
         navigate("/");
@@ -36,8 +33,13 @@ export default function Login() {
 
   return (
     <div className="h-screen flex items-center justify-center bg-gradient-to-br from-red-600 via-orange-500 to-yellow-400">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-[min(400px,92vw)]">
-        <h1 className="text-2xl font-bold text-center text-red-600 mb-6">GENAI Dashboard</h1>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className="backdrop-blur-lg bg-white/20 p-8 rounded-2xl shadow-2xl w-[min(400px,92vw)]"
+      >
+        <h1 className="text-3xl font-bold text-center text-white mb-6">GENAI Dashboard</h1>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <input
@@ -45,7 +47,7 @@ export default function Login() {
             placeholder="Email"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 outline-none"
+            className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 outline-none bg-white/80"
             required
           />
           <input
@@ -53,26 +55,26 @@ export default function Login() {
             placeholder="Password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 outline-none"
+            className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 outline-none bg-white/80"
             required
           />
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-200">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50"
+            className="w-full bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition disabled:opacity-50"
           >
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
-        <p className="text-sm text-center mt-4">
+        <p className="text-sm text-center mt-4 text-white/80">
           Don’t have an account?{" "}
-          <Link to="/signup" className="text-orange-600 font-medium hover:underline">Sign up</Link>
+          <Link to="/signup" className="text-yellow-200 font-medium hover:underline">Sign up</Link>
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }
