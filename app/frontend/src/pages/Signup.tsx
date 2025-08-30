@@ -15,19 +15,35 @@ export default function Signup() {
     setLoading(true);
     setError("");
 
-    try {
-      // 👉 TODO: replace with FastAPI call
-      if (name && email && password) {
-        navigate("/login");
-      } else {
-        setError("All fields are required");
-      }
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
+if (!name || !email || !password) {
+    setError("All fields are required");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_LINK}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: name, email, password }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      const msg = data?.detail || "Registration failed";
+      setError(msg);
+      return;
     }
-  };
+
+    navigate("/login");
+  } catch (err) {
+    console.error(err);
+    setError("Something went wrong. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="h-screen flex items-center justify-center bg-gradient-to-br from-orange-600 via-red-500 to-pink-500">

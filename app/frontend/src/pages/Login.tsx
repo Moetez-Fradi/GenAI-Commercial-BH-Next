@@ -16,21 +16,43 @@ export default function Login() {
     setLoading(true);
     setError("");
 
-    try {
-      // 👉 TODO: replace with FastAPI call
-      if (email === "admin@test.com" && password === "1234") {
-        login("fake-jwt-token");
-        navigate("/");
-      } else {
-        setError("Invalid credentials. Try admin@test.com / 1234");
-      }
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+if (!email || !password) {
+    setError("Please provide email and password.");
+    setLoading(false);
+    return;
+  }
 
+  try {
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_LINK}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      const msg = data?.detail || "Invalid credentials";
+      setError(msg);
+      return;
+    }
+
+    // success
+    const token = data?.access_token;
+    if (!token) {
+      setError("No token received from server.");
+      return;
+    }
+
+    login(token);
+    navigate("/Dashboard");
+  } catch (err) {
+    console.error(err);
+    setError("Something went wrong. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <div className="h-screen flex items-center justify-center bg-gradient-to-br from-red-600 via-orange-500 to-yellow-400">
       <motion.div

@@ -12,11 +12,9 @@ export default function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Public */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
-          {/* Protected */}
           <Route
             path="/"
             element={
@@ -25,7 +23,7 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Dashboard />} />
+            <Route path="Dashboard" index element={<Dashboard />} />
             <Route path="history" element={<History />} />
           </Route>
         </Routes>

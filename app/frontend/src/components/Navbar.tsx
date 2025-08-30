@@ -7,7 +7,7 @@ export default function Navbar() {
 
   return (
     <nav className="bg-red-600 text-white px-6 py-4 flex items-center justify-between shadow">
-      <Link to="/" className="font-bold text-xl hover:text-orange-200 transition">GENAI Dashboard</Link>
+      <Link to="/Dashboard" className="font-bold text-xl hover:text-orange-200 transition">GENAI Dashboard</Link>
       <div className="space-x-6 text-sm md:text-base">
         <Link to="/" className={active("/")}>Clients</Link>
         <Link to="/history" className={active("/history")}>History</Link>
