@@ -7,7 +7,7 @@ export default function Layout() {
   const { logout } = useAuth();
 
   const menu = [
-    { to: "/", label: "Clients", icon: <Home size={18} /> },
+    { to: "/Dashboard", label: "Clients", icon: <Home size={18} /> },
     { to: "/history", label: "History", icon: <History size={18} /> },
   ];
 
