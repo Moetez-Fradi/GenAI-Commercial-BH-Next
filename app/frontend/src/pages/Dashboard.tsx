@@ -23,15 +23,6 @@ export default function Dashboard() {
       recommendation: ["RC Pro", "Multirisque"],
       messages: [],
     },
-    {
-      ref_personne: "C003",
-      name: "Sarra K.",
-      type: "physique",
-      rank: 3,
-      status: "not_contacted",
-      recommendation: ["Habitation"],
-      messages: [],
-    },
   ]);
 
   const updateClient = (u: Client) =>
@@ -46,7 +37,6 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-red-600">Clients</h1>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ClientTable
           title="Client Physique"
