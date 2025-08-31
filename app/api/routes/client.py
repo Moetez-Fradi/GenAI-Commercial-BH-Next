@@ -4,8 +4,9 @@ from typing import List
 from app.db.base import get_db
 from app.models.client import Client
 from app.schemas.client import ClientCreate, ClientOut, RecommendationUpdate
+from app.utils.auth import get_current_user
 
-router = APIRouter()
+router = APIRouter( dependencies=[Depends(get_current_user)])
 
 @router.post("/", response_model=ClientOut)
 def create_client(payload: ClientCreate, db: Session = Depends(get_db)):
