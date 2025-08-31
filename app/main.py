@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.db.base import Base, engine
-from app.models import client as client_model
+from app.models import business_rec as client_model
 from app.api.routes import client as client_router
 from app.api.routes import auth as auth_router
 from app.api.routes.recommendation.recommendation import router as insurance_router
