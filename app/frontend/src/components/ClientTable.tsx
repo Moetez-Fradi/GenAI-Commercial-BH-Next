@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { Client } from "../types/client";
 import ClientDetailsPopup from "./ClientDetailsPopup";
 import MessageComposer from "./MessageComposer";
+import StatusBadge from "./StatusBadge";
+import { Eye, MessageSquare } from "lucide-react";
 
 interface Props {
   title: string;
@@ -15,35 +17,39 @@ export default function ClientTable({ title, clients, onUpdateClient, onMessageS
   const [msgClient, setMsgClient] = useState<Client | null>(null);
 
   return (
-    <div className="bg-white rounded-xl shadow w-full">
-      <div className="flex items-center justify-between px-4 py-3 border-b">
-        <h3 className="font-semibold text-orange-600">{title}</h3>
-        {/* Filters entry point (hook up later) */}
-        <button className="text-xs px-3 py-1 border rounded hover:bg-gray-50">Filters</button>
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-3 border-b bg-gradient-to-r from-orange-500 to-red-500 text-white">
+        <h3 className="font-semibold text-lg">{title}</h3>
+        <button className="text-xs px-3 py-1 rounded bg-white/20 hover:bg-white/30 transition">
+          Filters
+        </button>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-left">
-          <thead className="bg-orange-500 text-white">
+          <thead className="bg-gray-50 text-gray-600 text-sm uppercase">
             <tr>
-              <th className="p-2">Ref</th>
-              <th className="p-2">Name</th>
-              <th className="p-2">Recommendation</th>
-              <th className="p-2">Rank</th>
-              <th className="p-2">Status</th>
-              <th className="p-2 text-right">Actions</th>
+              <th className="p-3">Ref</th>
+              <th className="p-3">Name</th>
+              <th className="p-3">Recommendation</th>
+              <th className="p-3">Rank</th>
+              <th className="p-3">Status</th>
+              <th className="p-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {clients.map((c) => (
-              <tr key={c.ref_personne} className="odd:bg-white even:bg-orange-50/30">
-                <td className="p-2">{c.ref_personne}</td>
-                <td className="p-2">{c.name}</td>
-                <td className="p-2">
+              <tr key={c.ref_personne} className="border-b hover:bg-gray-50 transition">
+                <td className="p-3">{c.ref_personne}</td>
+                <td className="p-3 font-medium">{c.name}</td>
+                <td className="p-3">
                   {c.recommendation && c.recommendation.length ? (
                     <div className="flex flex-wrap gap-1">
                       {c.recommendation.map((r) => (
-                        <span key={r} className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
+                        <span
+                          key={r}
+                          className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-800"
+                        >
                           {r}
                         </span>
                       ))}
@@ -52,21 +58,23 @@ export default function ClientTable({ title, clients, onUpdateClient, onMessageS
                     <span className="text-gray-400 text-sm">—</span>
                   )}
                 </td>
-                <td className="p-2">{c.rank}</td>
-                <td className="p-2 capitalize">{c.status}</td>
-                <td className="p-2">
+                <td className="p-3">{c.rank}</td>
+                <td className="p-3">
+                  <StatusBadge status={c.status} />
+                </td>
+                <td className="p-3">
                   <div className="flex justify-end gap-2">
                     <button
                       onClick={() => setSelected(c)}
-                      className="px-3 py-1 text-xs rounded bg-neutral-800 text-white hover:opacity-90"
+                      className="flex items-center gap-1 px-3 py-1 text-xs rounded bg-gray-800 text-white hover:bg-gray-700 transition"
                     >
-                      Details
+                      <Eye size={14} /> Details
                     </button>
                     <button
                       onClick={() => setMsgClient(c)}
-                      className="px-3 py-1 text-xs rounded bg-orange-500 text-white hover:bg-orange-600"
+                      className="flex items-center gap-1 px-3 py-1 text-xs rounded bg-orange-500 text-white hover:bg-orange-600 transition"
                     >
-                      Generate
+                      <MessageSquare size={14} /> Generate
                     </button>
                   </div>
                 </td>
@@ -74,7 +82,9 @@ export default function ClientTable({ title, clients, onUpdateClient, onMessageS
             ))}
             {!clients.length && (
               <tr>
-                <td className="p-6 text-center text-gray-400" colSpan={6}>No data</td>
+                <td className="p-6 text-center text-gray-400" colSpan={6}>
+                  No clients
+                </td>
               </tr>
             )}
           </tbody>

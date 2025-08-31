@@ -2,7 +2,6 @@ import HistoryTable from "../components/HistoryTable";
 import type { Client } from "../types/client";
 
 export default function History() {
-  // This page shows past interactions and recommendation-history
   const history: Client[] = [
     {
       ref_personne: "C001",

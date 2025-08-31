@@ -1,33 +1,42 @@
-import { createContext, useContext, useState, type ReactNode, useEffect } from "react";
+// context/AuthContext.tsx
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   login: (token: string) => void;
   logout: () => void;
+  token?: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setAuth] = useState(false);
+  // initialize based on existing token presence
+  const [token, setToken] = useState<string | null>(() => {
+    const t = localStorage.getItem("token");
+    if (!t || t === "undefined") return null;
+    return t;
+  });
+
+  const isAuthenticated = !!token;
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) setAuth(true);
+    // optional: here you could verify token validity with backend /userinfo endpoint
   }, []);
 
-  const login = (token: string) => {
-    localStorage.setItem("token", token);
-    setAuth(true);
+  const login = (newToken: string) => {
+    if (!newToken) return;
+    localStorage.setItem("token", newToken);
+    setToken(newToken);
   };
 
   const logout = () => {
     localStorage.removeItem("token");
-    setAuth(false);
+    setToken(null);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout, token }}>
       {children}
     </AuthContext.Provider>
   );
