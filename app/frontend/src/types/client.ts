@@ -1,5 +1,3 @@
-// src/types/client.ts (updated)
-
 export type ClientType = "physique" | "moral";
 export type ClientStatus = "pending" | "accepted" | "refused" | "not_contacted";
 export type ContactMethod = "whatsapp" | "email" | "phone";
@@ -13,14 +11,14 @@ export interface SentMessage {
 }
 
 /* -------------------- Recommendation -------------------- */
-/** A recommendation entry can be a plain string or a richer object from the backend. */
 export interface Recommendation {
-  product?: string | null;      // normalized product name
-  label?: string | null;        // human-friendly label
-  score?: number | null;        // numeric score (0..100) if available
-  product_id?: string | null;   // any other backend prop you want to keep
-  raw?: any;                    // preserve full object if you need it
-  [key: string]: any;
+  product: string;                     // normalized product name
+  label?: string;                      // human-friendly label
+  score?: number | null;
+  status?: ClientStatus;               // accepted / refused / pending
+  contacts?: ContactMethod[];          // e.g. ["email"], ["whatsapp"], ["email", "whatsapp"]
+  messages?: SentMessage[];            // history of messages for this recommendation
+  [key: string]: any;                  // keep backend flexibility
 }
 
 /* -------------------- Physique Clients -------------------- */
@@ -45,7 +43,7 @@ export interface ClientPhysique {
   // last contact
   lastContact?: ContactMethod | null;
 
-  // previously sent messages
+  // previously sent messages (all messages across recs)
   messages?: SentMessage[];
 }
 
@@ -54,6 +52,8 @@ export interface ClientMoral {
   ref_personne: string;
   type: "moral";
   raison_sociale?: string;
+  status: ClientStatus;
+  rank?: number;
 
   // can be strings (legacy) or objects (newer backend)
   recommended_products?: (string | Recommendation)[];
@@ -70,7 +70,7 @@ export interface ClientMoral {
   // last contact
   lastContact?: ContactMethod | null;
 
-  // previously sent messages
+  // previously sent messages (all messages across recs)
   messages?: SentMessage[];
 }
 
