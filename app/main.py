@@ -5,6 +5,7 @@ from app.api.routes import client as client_router
 from app.api.routes import auth as auth_router
 from app.api.routes.recommendation.recommendation import router as insurance_router
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.routes import generate as generate_router
 
 #Create tables
 Base.metadata.create_all(bind=engine)
@@ -32,4 +33,10 @@ app.include_router(
     insurance_router,
     prefix="/api/recommendation",
     tags=["insurance"]
+)
+
+app.include_router(
+    generate_router.router,
+    prefix="/generate",
+    tags=["generate"]
 )

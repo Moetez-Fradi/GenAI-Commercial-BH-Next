@@ -2,7 +2,7 @@ import os
 from typing import List, Optional
 from dotenv import load_dotenv
 from openai import OpenAI
-from fastapi import FastAPI
+from fastapi import APIRouter
 from pydantic import BaseModel
 from fastapi.concurrency import run_in_threadpool
 
@@ -13,13 +13,13 @@ client = OpenAI(
     api_key=os.getenv("OPENROUTER_API_KEY"),
 )
 
-app = FastAPI()
+router = APIRouter()
 
 DEFAULT_SYSTEM_PROMPT = os.getenv(
     "SYSTEM_PROMPT"
 )
 
-MODEL_DEFAULT = "meta-llama/llama-3-8b-instruct"
+MODEL_DEFAULT = "meta-llama/llama-4-maverick:free"
 
 
 class Message(BaseModel):
@@ -52,7 +52,7 @@ def sync_generate(messages: List[dict], model: str, temperature: float, max_toke
         return str(resp)
 
 
-@app.post("/chat")
+@router.post("/")
 async def chat(req: ChatRequest):
     # choose model and prompt
     model = req.model or MODEL_DEFAULT
@@ -67,5 +67,7 @@ async def chat(req: ChatRequest):
         messages = incoming
 
     answer = await run_in_threadpool(sync_generate, messages, model, req.temperature, req.max_tokens)
+
+    print("LLM response:", answer)
 
     return {"reply": answer}
