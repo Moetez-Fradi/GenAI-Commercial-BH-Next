@@ -15,44 +15,38 @@ from app.schemas.business_rec import (
 )
 from app.schemas.individual_rec import PaginatedIndividualRecOut
 
-# If you need auth, uncomment the dependency line and its import
+# If you need auth, re-enable:
 # from app.utils.auth import get_current_user
 # router = APIRouter(dependencies=[Depends(get_current_user)])
 router = APIRouter()
 
 
 # ---------------------------
-# Helpers
+# Helpers (MySQL-safe NULLS LAST)
 # ---------------------------
 
-def order_with_nulls(
-    column,
-    by: Optional[str],            # "score" | "ref" | None
-    direction: Optional[str],     # "asc" | "desc" | None
-    default_ref_col=None
+def mysql_order_with_nulls_last(
+    primary_col,
+    direction: Optional[str],         # "asc" | "desc" | None
+    fallback_ref_col=None
 ):
     """
-    Build an ORDER BY with NULLS LAST/ FIRST semantics supported by SQLAlchemy 1.4+.
-    Falls back to ref column when by is None.
+    Emulate NULLS LAST for MySQL:
+      ORDER BY (col IS NULL) ASC, col ASC|DESC
+    (Non-null rows (0) first, NULL rows (1) last)
+
+    For REF/stable ordering, just order by ref asc/desc without null handling.
     """
     dir_ = (direction or "desc").lower()
-    if by == "score":
-        col = column
-    else:
-        # fallback to ref/stable ordering
-        col = default_ref_col if default_ref_col is not None else column
+    if primary_col is None:
+        # fallback on ref only
+        if fallback_ref_col is None:
+            raise ValueError("fallback_ref_col must be provided")
+        return [asc(fallback_ref_col) if dir_ == "asc" else desc(fallback_ref_col)]
 
-    if dir_ == "asc":
-        try:
-            return col.asc().nulls_last()
-        except Exception:
-            # best-effort fallback if nulls_last() not available
-            return asc(col)
-    else:
-        try:
-            return col.desc().nulls_last()
-        except Exception:
-            return desc(col)
+    nulls_last_clause = primary_col.is_(None).asc()  # 0 (not null) first, 1 (null) last
+    main = asc(primary_col) if dir_ == "asc" else desc(primary_col)
+    return [nulls_last_clause, main]
 
 
 # ---------------------------
@@ -110,7 +104,8 @@ def list_business_recs(
           business_risk -> BUSINESS_RISK_PROFILE in (HIGH_RISK, MEDIUM_RISK, LOW_RISK)
           segment       -> client_segment in (Entreprise, Business, SME, Small Business, Startup)
       - Sort:
-          score -> client_score, or ref -> REF_PERSONNE
+          score -> client_score (NULLS LAST via MySQL emulation), or
+          ref   -> REF_PERSONNE
       - Pagination after filtering/sorting.
     """
     q = db.query(BusinessRec)
@@ -118,19 +113,19 @@ def list_business_recs(
     if business_risk:
         q = q.filter(BusinessRec.BUSINESS_RISK_PROFILE.in_(business_risk))
     if segment:
-        # If your threshold lives in another column, replace client_segment accordingly.
         q = q.filter(BusinessRec.client_segment.in_(segment))
 
-    # build ordering (NULLS LAST)
-    order_col = order_with_nulls(
-        column=BusinessRec.client_score,
-        by=sort_by,
-        direction=sort_dir,
-        default_ref_col=BusinessRec.REF_PERSONNE,
-    )
-    q = q.order_by(order_col)
+    if sort_by == "score":
+        order_clauses = mysql_order_with_nulls_last(
+            primary_col=BusinessRec.client_score,
+            direction=sort_dir,
+            fallback_ref_col=BusinessRec.REF_PERSONNE,
+        )
+        q = q.order_by(*order_clauses)
+    else:
+        # stable ref ordering
+        q = q.order_by(asc(BusinessRec.REF_PERSONNE) if sort_dir == "asc" else desc(BusinessRec.REF_PERSONNE))
 
-    # apply pagination AFTER filters and sorting
     items = q.limit(limit).offset(offset).all()
 
     total: Optional[int] = None
@@ -176,7 +171,8 @@ def list_individual_recs(
           client_segment -> client_segment in (Bronze, Prospect, Gold, Premium, Silver)
           risk_profile   -> risk_profile in ("High Risk", "Medium Risk", "Low Risk")
       - Sort:
-          score -> client_score, or ref -> REF_PERSONNE
+          score -> client_score (NULLS LAST via MySQL emulation), or
+          ref   -> REF_PERSONNE
       - Pagination after filtering/sorting.
     """
     q = db.query(IndividualRec)
@@ -186,14 +182,15 @@ def list_individual_recs(
     if risk_profile:
         q = q.filter(IndividualRec.risk_profile.in_(risk_profile))
 
-    # build ordering (NULLS LAST)
-    order_col = order_with_nulls(
-        column=IndividualRec.client_score,
-        by=sort_by,
-        direction=sort_dir,
-        default_ref_col=IndividualRec.REF_PERSONNE,
-    )
-    q = q.order_by(order_col)
+    if sort_by == "score":
+        order_clauses = mysql_order_with_nulls_last(
+            primary_col=IndividualRec.client_score,
+            direction=sort_dir,
+            fallback_ref_col=IndividualRec.REF_PERSONNE,
+        )
+        q = q.order_by(*order_clauses)
+    else:
+        q = q.order_by(asc(IndividualRec.REF_PERSONNE) if sort_dir == "asc" else desc(IndividualRec.REF_PERSONNE))
 
     items = q.limit(limit).offset(offset).all()
 
