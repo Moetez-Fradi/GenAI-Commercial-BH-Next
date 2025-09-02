@@ -1,92 +1,71 @@
+// src/pages/History.tsx
+import { useEffect, useState } from "react";
 import HistoryTable from "../components/HistoryTable";
-import type { Client } from "../types/client";
+import type { Client, Recommendation, SentMessage } from "../types/client";
+import { fetchHistoryList } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 export default function History() {
-  const history: Client[] = [
-    {
-      ref_personne: "C001",
-      name: "Yassine B.",
-      type: "physique",
-      rank: 1,
-      status: "accepted",
-      lastContact: "whatsapp",
-      recommended_products: [
-        {
-          product: "Auto",
-          status: "accepted",
-          contacts: ["email"],
-          messages: [
-            {
-              id: "m1",
-              clientRef: "C001",
-              channel: "email",
-              content: "Bonjour Yassine, offre Auto disponible.",
-              sentAt: new Date("2025-08-25T09:00:00").toISOString(),
-            },
-          ],
-        },
-        {
-          product: "Retraite",
-          status: "pending",
-          contacts: ["whatsapp"],
-          messages: [
-            {
-              id: "m2",
-              clientRef: "C001",
-              channel: "whatsapp",
-              content: "Salut Yassine, avez-vous réfléchi à la Retraite ?",
-              sentAt: new Date("2025-09-01T14:30:00").toISOString(),
-            },
-          ],
-        },
-      ],
-    },
-    {
-      ref_personne: "C002",
-      type: "moral",
-      raison_sociale: "Acme Corp",
-      status: "refused",
-      rank: 2,
-      lastContact: "email",
-      recommended_products: [
-        {
-          product: "RC Pro",
-          status: "refused",
-          contacts: ["email"],
-          messages: [
-            {
-              id: "m3",
-              clientRef: "C002",
-              channel: "email",
-              content: "Bonjour, proposition RC Pro entreprise...",
-              sentAt: new Date("2025-08-26T11:15:00").toISOString(),
-            },
-          ],
-        },
-        {
-          product: "Multirisque",
-          status: "refused",
-          contacts: ["email", "whatsapp"],
-          messages: [
-            {
-              id: "m4",
-              clientRef: "C002",
-              channel: "email",
-              content: "Offre Multirisque envoyée par email.",
-              sentAt: new Date("2025-08-27T10:00:00").toISOString(),
-            },
-            {
-              id: "m5",
-              clientRef: "C002",
-              channel: "whatsapp",
-              content: "Bonjour, voici un rappel Multirisque via WhatsApp.",
-              sentAt: new Date("2025-08-28T15:45:00").toISOString(),
-            },
-          ],
-        },
-      ],
-    },
-  ];
+  const [history, setHistory] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { token } = useAuth();
+
+  useEffect(() => {
+    async function load() {
+      try {
+        setLoading(true);
+        const data = await fetchHistoryList(token);
+        // backend returns array of history objects — map to Client shape expected by components
+        const mapped: Client[] = data.map((h: any) => {
+          // map recommendations JSON -> recommended_products (Client type)
+          const recs = Array.isArray(h.recommendations)
+            ? h.recommendations.map((r: any) => ({
+                product: r.product,
+                label: r.label,
+                status: r.status ?? "pending",
+                contacts: r.contacts ?? [],
+                messages: Array.isArray(r.messages)
+                  ? r.messages.map((m: any) => ({
+                      id: String(m.id ?? Math.random()),
+                      clientRef: h.ref_personne,
+                      channel: m.channel,
+                      content: m.content,
+                      sentAt: m.sentAt,
+                    }))
+                  : [],
+              }))
+            : [];
+
+          // Build a Client-like object; set type to "physique" as fallback
+          return {
+            ref_personne: String(h.ref_personne),
+            name: h.name ?? h.ref_personne,
+            type: "physique",
+            rank: h.rank ?? undefined,
+            status: "pending",
+            recommended_products: recs,
+            recommendation_count: Array.isArray(recs) ? recs.length : 0,
+            lastContact:
+              recs.flatMap((r: any) => (r.contacts ? r.contacts : [])).length > 0
+                ? recs.flatMap((r: any) => (r.contacts ? r.contacts : []))[0]
+                : null,
+            messages: recs.flatMap((r: any) => r.messages ?? []),
+          } as Client;
+        });
+        setHistory(mapped);
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message || "Failed to load history");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [token]);
+
+  if (loading) return <p>Loading history...</p>;
+  if (error) return <p className="text-red-600">{error}</p>;
 
   return (
     <div className="space-y-6">
