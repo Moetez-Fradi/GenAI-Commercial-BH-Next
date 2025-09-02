@@ -1,33 +1,19 @@
-// src/components/ClientTable.tsx (replace table wrapper / rows)
-import { useState } from "react";
+// src/components/ClientTable.jsx
+import { useEffect, useMemo, useState } from "react";
 import PhysicalClientDetailsPopup from "./PhysicalClientDetailsPopup";
 import ClientDetailsMoralPopup from "./MoralClientDetailsPopup";
 import MessageComposer from "./MessageComposer";
 import StatusBadge from "./StatusBadge";
-import { Eye, MessageSquare } from "lucide-react";
+import { Eye, MessageSquare, SlidersHorizontal, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import type { Client, ClientMoral, ClientPhysique, ContactMethod } from "../types/client";
 
-type Props = {
-  title: string;
-  clients: Client[];
-  onUpdateClient: (u: Client) => void;
-  onMessageSent: (ref_personne: string) => void;
-};
+// Helper: checks physique vs morale
+const isPhysique = (c) => c.type === "physique";
 
-const isPhysique = (c: Client): c is ClientPhysique => c.type === "physique";
-
-type NormRec = {
-  product?: string | null;
-  label?: string | null;
-  score?: number | null;
-  raw?: any;
-  __key: string;
-};
-
-const normalizeRecs = (c: Client): NormRec[] => {
-  const raw = (c as any).recommended_products ?? [];
-  return raw.map((r: any, i: number) =>
+// Normalize recommendation chips
+const normalizeRecs = (c) => {
+  const raw = (c && c.recommended_products) || [];
+  return raw.map((r, i) =>
     typeof r === "string"
       ? { product: r, label: r, score: undefined, raw: r, __key: `s-${i}` }
       : {
@@ -40,65 +26,137 @@ const normalizeRecs = (c: Client): NormRec[] => {
   );
 };
 
-export default function ClientTable({ title, clients, onUpdateClient, onMessageSent }: Props) {
-  const [selected, setSelected] = useState<Client | null>(null);
-  const [msgClient, setMsgClient] = useState<Client | null>(null);
+export default function ClientTable({ title, clients, onUpdateClient, onMessageSent }) {
+  const [selected, setSelected] = useState(null);
+  const [msgClient, setMsgClient] = useState(null);
+  const [initialMessage, setInitialMessage] = useState(undefined);
+  const [genBusy, setGenBusy] = useState(null);
 
-  // NEW: for prefilled generated text and per-row busy state
-  const [initialMessage, setInitialMessage] = useState<string | undefined>(undefined);
-  const [genBusy, setGenBusy] = useState<string | null>(null); // ref_personne when busy
+  const { token } = useAuth();
 
-  const { token } = useAuth(); // use auth context (optional)
+  const SYSTEM_PROMPT = import.meta.env.VITE_SYSTEM_PROMPT;
+  const BACKEND = (import.meta.env.VITE_BACKEND_LINK?.replace(/\/$/, "") ?? ""); // used for /generate and list endpoints
 
-  const SYSTEM_PROMPT = import.meta.env.VITE_SYSTEM_PROMPT
+  // -----------------------
+  // Filters state
+  // -----------------------
+  const [showFilters, setShowFilters] = useState(false);
+  const [loadingFilter, setLoadingFilter] = useState(false);
+  const [filtered, setFiltered] = useState(null);
 
-  // helper to pick product string from recommendation
-  const pickProduct = (recommended?: any) => {
-    if (!recommended) return "the recommended product";
-    if (typeof recommended === "string") return recommended;
-    return recommended.product ?? recommended.label ?? recommended.product_id ?? String(recommended.raw ?? "the recommended product");
+  // Determine mode from the incoming list (default to morale if unknown)
+  const mode = useMemo(() => {
+    const first = clients?.[0];
+    return first && first.type === "physique" ? "physique" : "morale";
+  }, [clients]);
+
+  // Filter fields per mode
+  const [physSegment, setPhysSegment] = useState("");
+  const [physRisk, setPhysRisk] = useState("");
+  const [moraleRisk, setMoraleRisk] = useState("");
+  const [moraleSegment, setMoraleSegment] = useState("");
+  const [sortBy, setSortBy] = useState("score"); // "score" | "ref"
+  const [sortDir, setSortDir] = useState("desc"); // "asc" | "desc"
+
+  const clearFilters = () => {
+    setPhysSegment("");
+    setPhysRisk("");
+    setMoraleRisk("");
+    setMoraleSegment("");
+    setSortBy("score");
+    setSortDir("desc");
+    setFiltered(null);
   };
 
-  // Build messages array and call backend /llm directly
-  const handleGenerate = async (c: Client) => {
-    const ref = (c as any).ref_personne;
+  const applyFilters = async () => {
+    try {
+      setLoadingFilter(true);
+
+      const params = new URLSearchParams();
+      params.set("limit", "10");
+      params.set("offset", "0");
+      params.set("sort_by", sortBy);
+      params.set("sort_dir", sortDir);
+
+      let url = "";
+      if (mode === "physique") {
+        url = `${BACKEND}/physique`;
+        if (physSegment) params.append("client_segment", physSegment);
+        if (physRisk) params.append("risk_profile", physRisk);
+      } else {
+        url = `${BACKEND}/morale`;
+        if (moraleRisk) params.append("business_risk", moraleRisk);
+        if (moraleSegment) params.append("segment", moraleSegment);
+      }
+
+      const res = await fetch(`${url}?${params.toString()}`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(`Filter request failed: ${res.status} ${res.statusText} ${t}`);
+      }
+      const json = await res.json();
+      const items = (json?.items ?? []).map((it) => ({ ...it, type: mode })); // inject type for UI
+      setFiltered(items);
+      setShowFilters(false);
+    } catch (err) {
+      console.error(err);
+      alert(err?.message ?? "Failed to apply filters");
+    } finally {
+      setLoadingFilter(false);
+    }
+  };
+
+  const rows = filtered ?? clients ?? [];
+
+  // Helper to pick product string for the generator
+  const pickProduct = (recommended) => {
+    if (!recommended) return "the recommended product";
+    if (typeof recommended === "string") return recommended;
+    return (
+      recommended.product ??
+      recommended.label ??
+      recommended.product_id ??
+      String(recommended.raw ?? "the recommended product")
+    );
+  };
+
+  // Generate a short pitch and open composer
+  const handleGenerate = async (c) => {
+    const ref = c?.ref_personne;
     try {
       setGenBusy(ref);
       setInitialMessage(undefined);
 
-      // pick first recommended product (if present)
-      const firstRec = Array.isArray((c as any).recommended_products) && (c as any).recommended_products.length
-        ? (c as any).recommended_products[0]
-        : undefined;
+      const firstRec =
+        Array.isArray(c?.recommended_products) && c.recommended_products.length
+          ? c.recommended_products[0]
+          : undefined;
       const product = pickProduct(firstRec);
 
-      // include previous messages as assistant context where possible
-      const messages: { role: string; content: string }[] = [];
-      if (Array.isArray((c as any).messages) && (c as any).messages.length) {
-        (c as any).messages.forEach((m: any) => {
+      const messages = [];
+      if (Array.isArray(c?.messages) && c.messages.length) {
+        c.messages.forEach((m) => {
           const text = typeof m === "string" ? m : m.content ?? m.body ?? "";
-          messages.push({ role: "assistant", content: text });
+          if (text) messages.push({ role: "assistant", content: text });
         });
       }
 
-      // build user instruction
-      const who =
-        (c as any).type === "physique"
-          ? `customer ${(c as any).name ?? ref}`
-          : `company ${((c as any).raison_sociale ?? ref)}`;
+      const who = c?.type === "physique" ? `customer ${c?.name ?? ref}` : `company ${c?.raison_sociale ?? ref}`;
 
-      const details: string[] = [];
-
-      if (isPhysique(c)) {
+      const details = [];
+      if (c?.type === "physique") {
         if (c.age) details.push(`age: ${c.age}`);
         if (c.city) details.push(`city: ${c.city}`);
-        // use segment / risk_profile as "status" in details
-        const status = c.segment ?? c.risk_profile ?? (c as any).status;
+        const status = c.segment ?? c.risk_profile ?? c.status;
         if (status) details.push(`status: ${status}`);
       } else {
-        const cm = c as ClientMoral;
-        if (cm.client_segment) details.push(`segment: ${cm.client_segment}`);
-        if (cm.risk_profile) details.push(`risk: ${cm.risk_profile}`);
+        if (c.client_segment) details.push(`segment: ${c.client_segment}`);
+        if (c.risk_profile) details.push(`risk: ${c.risk_profile}`);
       }
 
       messages.push({
@@ -110,9 +168,6 @@ export default function ClientTable({ title, clients, onUpdateClient, onMessageS
           "Return only the pitch text (no extra commentary).",
       });
 
-      const BACKEND = import.meta.env.VITE_BACKEND_LINK?.replace(/\/$/, "") ?? "";
-      if (!BACKEND) throw new Error("VITE_BACKEND_LINK is not configured");
-
       const payload = {
         system_prompt: SYSTEM_PROMPT,
         messages,
@@ -120,6 +175,7 @@ export default function ClientTable({ title, clients, onUpdateClient, onMessageS
         max_tokens: 300,
       };
 
+      if (!BACKEND) throw new Error("VITE_BACKEND_LINK is not configured");
       const res = await fetch(`${BACKEND}/generate`, {
         method: "POST",
         headers: {
@@ -137,8 +193,8 @@ export default function ClientTable({ title, clients, onUpdateClient, onMessageS
       const json = await res.json();
       const reply = (json?.reply ?? "").trim();
       setInitialMessage(reply);
-      setMsgClient(c); // open composer with prefilled message
-    } catch (err: any) {
+      setMsgClient(c);
+    } catch (err) {
       console.error("Generate failed", err);
       alert("Failed to generate message: " + (err?.message ?? "unknown error"));
     } finally {
@@ -150,10 +206,139 @@ export default function ClientTable({ title, clients, onUpdateClient, onMessageS
     <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3 border-b bg-gradient-to-r from-orange-500 to-red-500 text-white">
         <h3 className="font-semibold text-lg">{title}</h3>
-        <button className="text-xs px-3 py-1 rounded bg-white/20 hover:bg-white/30 transition">Filters</button>
+
+        <div className="flex items-center gap-2">
+          {filtered && (
+            <button
+              onClick={clearFilters}
+              className="text-xs px-3 py-1 rounded bg-white/20 hover:bg-white/30 transition"
+              title="Clear filters"
+            >
+              Clear
+            </button>
+          )}
+          <button
+            onClick={() => setShowFilters((s) => !s)}
+            className="text-xs px-3 py-1 rounded bg-white/20 hover:bg-white/30 transition flex items-center gap-1"
+          >
+            <SlidersHorizontal size={14} /> Filters
+          </button>
+        </div>
       </div>
 
-      {/* prevent horizontal scroll */}
+      {/* FILTER PANEL */}
+      {showFilters && (
+        <div className="px-5 py-4 border-b bg-gray-50">
+          <div className="flex flex-wrap items-end gap-3">
+            {/* common sort */}
+            <div className="flex flex-col">
+              <label className="text-xs text-gray-600 mb-1">Sort By</label>
+              <select
+                className="text-sm border rounded px-2 py-1"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="score">Score</option>
+                <option value="ref">Ref</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col">
+              <label className="text-xs text-gray-600 mb-1">Direction</label>
+              <select
+                className="text-sm border rounded px-2 py-1"
+                value={sortDir}
+                onChange={(e) => setSortDir(e.target.value)}
+              >
+                <option value="desc">Desc</option>
+                <option value="asc">Asc</option>
+              </select>
+            </div>
+
+            {mode === "physique" ? (
+              <>
+                <div className="flex flex-col">
+                  <label className="text-xs text-gray-600 mb-1">Client Segment</label>
+                  <select
+                    className="text-sm border rounded px-2 py-1"
+                    value={physSegment}
+                    onChange={(e) => setPhysSegment(e.target.value)}
+                  >
+                    <option value="">Any</option>
+                    <option>Bronze</option>
+                    <option>Prospect</option>
+                    <option>Gold</option>
+                    <option>Premium</option>
+                    <option>Silver</option>
+                  </select>
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-xs text-gray-600 mb-1">Risk Profile</label>
+                  <select
+                    className="text-sm border rounded px-2 py-1"
+                    value={physRisk}
+                    onChange={(e) => setPhysRisk(e.target.value)}
+                  >
+                    <option value="">Any</option>
+                    <option>High Risk</option>
+                    <option>Medium Risk</option>
+                    <option>Low Risk</option>
+                  </select>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-col">
+                  <label className="text-xs text-gray-600 mb-1">Business Risk</label>
+                  <select
+                    className="text-sm border rounded px-2 py-1"
+                    value={moraleRisk}
+                    onChange={(e) => setMoraleRisk(e.target.value)}
+                  >
+                    <option value="">Any</option>
+                    <option>HIGH_RISK</option>
+                    <option>MEDIUM_RISK</option>
+                    <option>LOW_RISK</option>
+                  </select>
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-xs text-gray-600 mb-1">Segment Threshold</label>
+                  <select
+                    className="text-sm border rounded px-2 py-1"
+                    value={moraleSegment}
+                    onChange={(e) => setMoraleSegment(e.target.value)}
+                  >
+                    <option value="">Any</option>
+                    <option>Entreprise</option>
+                    <option>Business</option>
+                    <option>SME</option>
+                    <option>Small Business</option>
+                    <option>Startup</option>
+                  </select>
+                </div>
+              </>
+            )}
+
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={() => setShowFilters(false)}
+                className="px-3 py-1 text-sm rounded border bg-white hover:bg-gray-100 flex items-center gap-1"
+              >
+                <X size={14} /> Close
+              </button>
+              <button
+                onClick={applyFilters}
+                disabled={loadingFilter}
+                className="px-3 py-1 text-sm rounded bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-60"
+              >
+                {loadingFilter ? "Applying..." : "Apply"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TABLE */}
       <div className="overflow-x-hidden">
         <table className="w-full table-fixed text-left">
           <thead className="bg-gray-50 text-gray-600 text-sm uppercase">
@@ -168,22 +353,19 @@ export default function ClientTable({ title, clients, onUpdateClient, onMessageS
           </thead>
 
           <tbody>
-            {clients.map((c) => {
-              const displayName = isPhysique(c) ? c.name : (c as ClientMoral).raison_sociale ?? `Ref ${c.ref_personne}`;
+            {rows.map((c) => {
+              const displayName = isPhysique(c) ? c.name : c.raison_sociale ?? `Ref ${c.ref_personne}`;
               const recs = normalizeRecs(c);
 
-              const moralScore =
-                !isPhysique(c)
-                  ? recs.find((r) => r.score !== undefined && r.score !== null)?.score ??
-                    (c as ClientMoral).client_score
-                  : undefined;
+              const moralScore = !isPhysique(c)
+                ? (recs.find((r) => r.score !== undefined && r.score !== null)?.score ?? c.client_score)
+                : undefined;
 
-              // For physique show 'score' primarily (falls back to rank)
-              const physScore = isPhysique(c) ? (c as ClientPhysique).score ?? (c as ClientPhysique).rank : undefined;
+              const physScore = isPhysique(c) ? (c.score ?? c.rank) : undefined;
 
-              const statusForBadge =
-                (isPhysique(c) ? ((c as ClientPhysique).segment ?? (c as ClientPhysique).risk_profile ?? (c as ClientPhysique).status) : undefined) ??
-                (!isPhysique(c) ? ((c as ClientMoral).client_segment ?? (c as ClientMoral).risk_profile) : undefined);
+              const statusForBadge = isPhysique(c)
+                ? (c.segment ?? c.risk_profile ?? c.status)
+                : (c.client_segment ?? c.risk_profile);
 
               return (
                 <tr key={c.ref_personne} className="border-b hover:bg-gray-50 transition">
@@ -223,7 +405,7 @@ export default function ClientTable({ title, clients, onUpdateClient, onMessageS
 
                   <td className="p-3 align-top">
                     {statusForBadge ? (
-                      <StatusBadge status={statusForBadge as string} />
+                      <StatusBadge status={statusForBadge} />
                     ) : (
                       <span className="inline-block text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">—</span>
                     )}
@@ -252,7 +434,7 @@ export default function ClientTable({ title, clients, onUpdateClient, onMessageS
               );
             })}
 
-            {!clients.length && (
+            {!rows.length && (
               <tr>
                 <td className="p-6 text-center text-gray-400" colSpan={6}>No clients</td>
               </tr>
@@ -261,21 +443,22 @@ export default function ClientTable({ title, clients, onUpdateClient, onMessageS
         </table>
       </div>
 
+      {/* Popups */}
       {selected && (
         isPhysique(selected) ? (
           <PhysicalClientDetailsPopup
-            client={selected as ClientPhysique}
+            client={selected}
             onClose={() => setSelected(null)}
-            onUpdate={(u: ClientPhysique) => {
+            onUpdate={(u) => {
               onUpdateClient(u);
               setSelected(u);
             }}
           />
         ) : (
           <ClientDetailsMoralPopup
-            client={selected as ClientMoral}
+            client={selected}
             onClose={() => setSelected(null)}
-            onUpdate={(u: ClientMoral) => {
+            onUpdate={(u) => {
               onUpdateClient(u);
               setSelected(u);
             }}
@@ -288,9 +471,8 @@ export default function ClientTable({ title, clients, onUpdateClient, onMessageS
           client={msgClient}
           onClose={() => { setMsgClient(null); setInitialMessage(undefined); }}
           initialMessage={initialMessage}
-          onSent={(_channel: ContactMethod, _content: string) => {
-            // preserve parent API: notify that the client was messaged (by ref)
-            onMessageSent((msgClient as any).ref_personne);
+          onSent={(_channel, _content) => {
+            onMessageSent(msgClient.ref_personne);
             setMsgClient(null);
             setInitialMessage(undefined);
           }}
