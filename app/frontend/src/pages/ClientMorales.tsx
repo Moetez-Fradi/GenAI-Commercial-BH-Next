@@ -1,4 +1,3 @@
-// src/pages/Clients.tsx
 import { useState, useEffect } from "react";
 import ClientTable from "../components/ClientTable";
 import { useAuth } from "../context/AuthContext";

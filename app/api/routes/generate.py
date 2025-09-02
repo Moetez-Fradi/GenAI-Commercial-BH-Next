@@ -2,9 +2,15 @@ import os
 from typing import List, Optional
 from dotenv import load_dotenv
 from openai import OpenAI
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from fastapi.concurrency import run_in_threadpool
+from datetime import datetime
+import uuid
+from sqlalchemy.orm import Session
+from app.db.base import get_db
+from app.services.history_service import upsert_history, add_message_to_recommendation
+from app.schemas.history import HistoryCreate, HistoryMessageCreate
 
 load_dotenv()
 
@@ -71,3 +77,47 @@ async def chat(req: ChatRequest):
     print("LLM response:", answer)
 
     return {"reply": answer}
+@router.post("/send")
+async def chat_and_save(
+    ref_personne: str,
+    product: str,
+    channel: str,
+    req: ChatRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Generate a message with the LLM and also save it to the history table.
+    """
+    # 1. call your existing generation
+    model = req.model or MODEL_DEFAULT
+    system_prompt = req.system_prompt if req.system_prompt is not None else DEFAULT_SYSTEM_PROMPT
+    incoming = [m.dict() for m in req.messages]
+
+    if not any(m.get("role") == "system" for m in incoming) and system_prompt:
+        messages = [{"role": "system", "content": system_prompt}] + incoming
+    else:
+        messages = incoming
+
+    answer = await run_in_threadpool(sync_generate, messages, model, req.temperature, req.max_tokens)
+
+    # 2. upsert history entry for this client
+    history_in = HistoryCreate(
+        ref_personne=ref_personne,
+        name=None,
+        rank=None,
+        recommendations=[]
+    )
+    upsert_history(db, history_in)
+
+    # 3. save message under the recommendation
+    msg = HistoryMessageCreate(
+        id=str(uuid.uuid4()),
+        channel=channel,
+        content=answer,
+        sentAt=datetime.utcnow(),
+    )
+    updated_history = add_message_to_recommendation(db, ref_personne, product, msg)
+    if not updated_history:
+        raise HTTPException(status_code=500, detail="Failed to save history")
+
+    return {"reply": answer, "history": updated_history}

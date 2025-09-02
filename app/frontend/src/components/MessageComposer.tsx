@@ -3,9 +3,7 @@ import { useEffect, useState } from "react";
 import type { Client, ContactMethod } from "../types/client";
 import Modal from "./Modal";
 import { useAuth } from "../context/AuthContext";
-// If you already have this util, keep it. If not, you can replace the send()
-// call below with your own backend call or temporary no-op.
-import { sendMessage } from "../api/clients";
+// removed sendMessage import since we now call backend endpoints directly
 
 interface Props {
   client: Client;
@@ -55,9 +53,10 @@ export default function MessageComposer({
     const product = pickProduct(firstRec);
 
     const ref = anyC.ref_personne;
-    const who = anyC.type === "physique"
-      ? `customer ${anyC.name ?? ref}`
-      : `company ${anyC.raison_sociale ?? ref}`;
+    const who =
+      anyC.type === "physique"
+        ? `customer ${anyC.name ?? ref}`
+        : `company ${anyC.raison_sociale ?? ref}`;
 
     const details: string[] = [];
     if ("age" in anyC && anyC.age) details.push(`age: ${anyC.age}`);
@@ -132,14 +131,137 @@ export default function MessageComposer({
     }
   };
 
+  // Helpers to extract phone/email from client (best-effort)
+  const extractPhone = (c: any): string | null => {
+    const candidates = [
+      c.phone,
+      c.phone_number,
+      c.phoneNumber,
+      c.telephone,
+      c.mobile,
+      c.tel,
+      c.contact_phone,
+    ];
+    for (const v of candidates) {
+      if (!v) continue;
+      const s = String(v).trim();
+      if (s) return s;
+    }
+    return null;
+  };
+
+  const extractEmail = (c: any): string | null => {
+    const candidates = [c.email, c.email_address, c.contact_email, c.mail];
+    for (const v of candidates) {
+      if (!v) continue;
+      const s = String(v).trim();
+      if (s) return s;
+    }
+    return null;
+  };
+
+  // sanitize Tunisian phone for your backend which prefixes +216
+  const sanitizeTunisianLocalNumber = (raw: string) => {
+    let s = raw.replace(/[\s\-\(\)\+]/g, ""); // remove spaces, dashes, parentheses and plus
+    // If user accidentally provided the international form like 216XXXXXXXX, remove leading 216
+    if (s.startsWith("216")) s = s.slice(3);
+    // If it starts with a leading 0 (e.g. 09xxxxxx) remove it because backend prefixes +216
+    if (s.startsWith("0")) s = s.slice(1);
+    return s;
+  };
+
+
+          // this should be changed when the contacts are available
   const send = async (channel: ContactMethod) => {
-    if (!message.trim()) return;
+    if (!message.trim()) {
+      alert("Message is empty.");
+      return;
+    }
     setBusy(true);
+    const BACKEND = import.meta.env.VITE_BACKEND_LINK?.replace(/\/$/, "") ?? "";
+    if (!BACKEND) {
+      alert("Backend not configured (VITE_BACKEND_LINK).");
+      setBusy(false);
+      return;
+    }
+
     try {
-      // If you don't have this util, replace with your own backend call.
-      await sendMessage(client, channel, message);
-      onSent(channel, message);
-      onClose();
+      if (channel === "whatsapp") {
+        const rawPhone = extractPhone(client as any);
+        // if (!rawPhone) {
+        //   alert("No phone number found for this client.");
+        //   return;
+        // }
+        // const localNumber = sanitizeTunisianLocalNumber(rawPhone);
+        // if (!/^\d+$/.test(localNumber)) {
+        //   alert("Client phone number looks invalid after sanitization: " + localNumber);
+        //   return;
+        // }
+
+        const payload = {
+          phone_number: "26907092",
+          message: message,
+        };
+
+        const res = await fetch(`${BACKEND}/whatsapp/send_whatsapp`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(`WhatsApp send failed: ${res.status} ${res.statusText} ${text}`);
+        }
+
+        const json = await res.json();
+        // optionally check json.status or sid
+        onSent(channel, message);
+        onClose();
+      } else if (channel === "email") {
+        const recipient = extractEmail(client as any);
+        // if (!recipient) {
+        //   alert("No email address found for this client.");
+        //   return;
+        // }
+
+        const anyC: any = client as any;
+        const firstRec =
+          Array.isArray(anyC.recommended_products) && anyC.recommended_products.length
+            ? anyC.recommended_products[0]
+            : undefined;
+        const product = pickProduct(firstRec);
+        const subject = `Quick proposal: ${product}`;
+        
+        const payload = {
+          recipient : "truetoneofficial1@gmail.com",
+          subject,
+          body: message,
+        };
+
+        const res = await fetch(`${BACKEND}/email/send_email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(`Email send failed: ${res.status} ${res.statusText} ${text}`);
+        }
+
+        const json = await res.json();
+        onSent(channel, message);
+        onClose();
+      } else {
+        alert("Unknown channel: " + String(channel));
+      }
     } catch (err: any) {
       console.error("Send failed", err);
       alert("Failed to send message: " + (err?.message ?? "unknown error"));
@@ -152,7 +274,9 @@ export default function MessageComposer({
     <Modal open={true} onClose={onClose}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-orange-600">Generated Message</h3>
-        <button onClick={onClose} className="px-2 py-1 rounded hover:bg-gray-100">✕</button>
+        <button onClick={onClose} className="px-2 py-1 rounded hover:bg-gray-100">
+          ✕
+        </button>
       </div>
 
       <textarea

@@ -1,5 +1,6 @@
+// src/components/HistoryTable.tsx
 import { useState } from "react";
-import type { Client, Recommendation } from "../types/client";
+import type { Client, Recommendation, SentMessage } from "../types/client";
 import MessagesModal from "./MessagesModal";
 
 interface Props {
@@ -12,67 +13,67 @@ export default function HistoryTable({ history }: Props) {
     recommendation: Recommendation;
   } | null>(null);
 
+  const latestDateForClient = (c: Client) => {
+    const allMsgs: SentMessage[] = (c.recommended_products ?? [])
+      .flatMap((r: any) => (typeof r === "string" ? [] : (r.messages ?? [])));
+    if (!allMsgs.length) return "-";
+    const latest = allMsgs.reduce((a, b) => (new Date(a.sentAt) > new Date(b.sentAt) ? a : b));
+    return new Date(latest.sentAt).toLocaleString();
+  };
+
   return (
-    <div className="bg-white shadow rounded-2xl overflow-hidden">
-      <table className="w-full text-sm text-left text-gray-600">
-        <thead className="bg-gradient-to-r from-red-600 to-orange-500 text-white">
+    <div className="overflow-x-auto bg-white shadow rounded-lg">
+      <table className="w-full text-left">
+        <thead className="bg-red-600 text-white">
           <tr>
-            <th className="px-4 py-3">REF</th>
-            <th className="px-4 py-3">NAME</th>
-            <th className="px-4 py-3">RANK</th>
-            <th className="px-4 py-3">RECOMMENDATIONS</th>
-            <th className="px-4 py-3">ACTIONS</th>
+            <th className="p-2">Ref</th>
+            <th className="p-2">Name</th>
+            <th className="p-2">Rank</th>
+            <th className="p-2">Recommendations</th>
+            <th className="p-2">Date</th>
+            <th className="p-2">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {history.map((client) => (
-            <tr key={client.ref_personne} className="border-t">
-              <td className="px-4 py-3 font-mono">{client.ref_personne}</td>
-              <td className="px-4 py-3 font-semibold">
-                {"name" in client ? client.name : client.raison_sociale}
-              </td>
-              <td className="px-4 py-3">{client.rank ?? "-"}</td>
-              <td className="px-4 py-3 space-y-2">
-                {Array.isArray(client.recommended_products) &&
-                  client.recommended_products.map((rec, idx) => {
-                    if (typeof rec === "string") return null; // legacy
-                    return (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between bg-gray-50 rounded p-2"
-                      >
-                        <div>
-                          <span className="font-medium">{rec.product}</span>{" "}
-                          <span
-                            className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
-                              rec.status === "accepted"
-                                ? "bg-green-100 text-green-700"
-                                : rec.status === "refused"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-gray-200 text-gray-700"
-                            }`}
-                          >
-                            {rec.status}
-                          </span>
-                          {rec.contacts && (
-                            <span className="ml-2 text-xs text-gray-500">
-                              via {rec.contacts.join(" & ")}
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          onClick={() =>
-                            setSelected({ client, recommendation: rec })
-                          }
-                          className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700"
-                        >
-                          View Messages
-                        </button>
+          {history.map((c) => (
+            <tr key={c.ref_personne} className="border-t hover:bg-gray-50">
+              <td className="p-2 font-mono">{c.ref_personne}</td>
+              <td className="p-2 font-semibold">{("name" in c ? c.name : (c as any).raison_sociale)}</td>
+              <td className="p-2">{c.rank ?? "-"}</td>
+
+              <td className="p-2">
+                {(c.recommended_products ?? []).map((r: any, i: number) => {
+                  if (typeof r === "string") {
+                    return <div key={i} className="mb-1">{r}</div>;
+                  }
+                  return (
+                    <div key={i} className="mb-2 flex justify-between items-center">
+                      <div>
+                        <span className="font-medium">{r.product}</span>{" "}
+                        <span className="ml-2 px-2 py-0.5 rounded text-xs bg-gray-100">{r.status}</span>
+                        <span className="ml-2 text-sm text-gray-500">{(r.contacts ?? []).join(" & ")}</span>
                       </div>
-                    );
-                  })}
+                    </div>
+                  );
+                })}
               </td>
-              <td className="px-4 py-3 text-right text-gray-400">—</td>
+
+              <td className="p-2">{latestDateForClient(c)}</td>
+
+              <td className="p-2">
+                {(c.recommended_products ?? []).map((r: any, idx: number) => {
+                  if (typeof r === "string") return null;
+                  return (
+                    <button
+                      key={idx}
+                      className="px-3 py-1 bg-gray-900 text-white rounded mr-2 mb-2 hover:bg-gray-700 text-sm"
+                      onClick={() => setSelected({ client: c, recommendation: r })}
+                    >
+                      View Messages ({r.product})
+                    </button>
+                  );
+                })}
+              </td>
             </tr>
           ))}
         </tbody>
