@@ -60,11 +60,9 @@ def sync_generate(messages: List[dict], model: str, temperature: float, max_toke
 
 @router.post("/")
 async def chat(req: ChatRequest):
-    # choose model and prompt
     model = req.model or MODEL_DEFAULT
     system_prompt = req.system_prompt if req.system_prompt is not None else DEFAULT_SYSTEM_PROMPT
 
-    # convert pydantic Message -> dict
     incoming = [m.dict() for m in req.messages]
 
     if not any(m.get("role") == "system" for m in incoming) and system_prompt:
@@ -88,7 +86,6 @@ async def chat_and_save(
     """
     Generate a message with the LLM and also save it to the history table.
     """
-    # 1. call your existing generation
     model = req.model or MODEL_DEFAULT
     system_prompt = req.system_prompt if req.system_prompt is not None else DEFAULT_SYSTEM_PROMPT
     incoming = [m.dict() for m in req.messages]
@@ -100,7 +97,6 @@ async def chat_and_save(
 
     answer = await run_in_threadpool(sync_generate, messages, model, req.temperature, req.max_tokens)
 
-    # 2. upsert history entry for this client
     history_in = HistoryCreate(
         ref_personne=ref_personne,
         name=None,
@@ -109,7 +105,6 @@ async def chat_and_save(
     )
     upsert_history(db, history_in)
 
-    # 3. save message under the recommendation
     msg = HistoryMessageCreate(
         id=str(uuid.uuid4()),
         channel=channel,

@@ -15,19 +15,11 @@ from app.schemas.business_rec import (
 )
 from app.schemas.individual_rec import PaginatedIndividualRecOut
 
-# If you need auth, re-enable:
-# from app.utils.auth import get_current_user
-# router = APIRouter(dependencies=[Depends(get_current_user)])
 router = APIRouter()
-
-
-# ---------------------------
-# Helpers (MySQL-safe NULLS LAST)
-# ---------------------------
 
 def mysql_order_with_nulls_last(
     primary_col,
-    direction: Optional[str],         # "asc" | "desc" | None
+    direction: Optional[str],       
     fallback_ref_col=None
 ):
     """
@@ -39,19 +31,14 @@ def mysql_order_with_nulls_last(
     """
     dir_ = (direction or "desc").lower()
     if primary_col is None:
-        # fallback on ref only
         if fallback_ref_col is None:
             raise ValueError("fallback_ref_col must be provided")
         return [asc(fallback_ref_col) if dir_ == "asc" else desc(fallback_ref_col)]
 
-    nulls_last_clause = primary_col.is_(None).asc()  # 0 (not null) first, 1 (null) last
+    nulls_last_clause = primary_col.is_(None).asc()
     main = asc(primary_col) if dir_ == "asc" else desc(primary_col)
     return [nulls_last_clause, main]
 
-
-# ---------------------------
-# Create / Read / Update for Business (morale)
-# ---------------------------
 
 @router.post("/", response_model=BusinessRecOut)
 def create_business_rec(payload: BusinessRecCreate, db: Session = Depends(get_db)):
@@ -123,7 +110,6 @@ def list_business_recs(
         )
         q = q.order_by(*order_clauses)
     else:
-        # stable ref ordering
         q = q.order_by(asc(BusinessRec.REF_PERSONNE) if sort_dir == "asc" else desc(BusinessRec.REF_PERSONNE))
 
     items = q.limit(limit).offset(offset).all()
@@ -152,16 +138,13 @@ def list_business_recs(
 def list_individual_recs(
     db: Session = Depends(get_db),
 
-    # pagination
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
     include_total: bool = Query(False),
 
-    # filters
     client_segment: Optional[List[Literal["Bronze", "Prospect", "Gold", "Premium", "Silver"]]] = Query(None),
     risk_profile: Optional[List[Literal["High Risk", "Medium Risk", "Low Risk"]]] = Query(None),
 
-    # sorting
     sort_by: Optional[Literal["score", "ref"]] = Query(None),
     sort_dir: Optional[Literal["asc", "desc"]] = Query("desc"),
 ):
