@@ -18,7 +18,7 @@ kiwisolver==1.4.8
 matplotlib==3.10.5
 matplotlib-inline==0.1.7
 nest-asyncio==1.6.0
-numpy==2.2.6
+numpy==1.26.4
 openpyxl==3.1.5
 packaging==25.0
 pandas==2.3.1
@@ -32,7 +32,6 @@ Pygments==2.19.2
 pyparsing==3.2.3
 python-dateutil==2.9.0.post0
 pytz==2025.2
-pywin32==311
 pyzmq==27.0.1
 seaborn==0.13.2
 six==1.17.0
