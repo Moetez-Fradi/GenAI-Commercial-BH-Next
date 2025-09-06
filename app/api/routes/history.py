@@ -1,38 +1,35 @@
-# app/api/routes/history.py
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List, Optional
-
+from typing import List
 from app.db.base import get_db
-from app.schemas.history import HistoryCreate, HistoryOut, PaginatedHistoryOut, HistoryMessageCreate
-from app.services.history_service import upsert_history, add_message_to_recommendation
-from app.models.history import History
+from app.models.history import History, HistoryMessage
+from app.schemas.history import HistoryCreate, HistoryOut, HistoryMessageCreate, HistoryMessageOut
 
 router = APIRouter()
 
-
 @router.post("/", response_model=HistoryOut)
-def create_or_upsert_history(payload: HistoryCreate, db: Session = Depends(get_db)):
-    return upsert_history(db, payload)
-
+def create_history(history_in: HistoryCreate, db: Session = Depends(get_db)):
+    history = History(**history_in.dict())
+    db.add(history)
+    db.commit()
+    db.refresh(history)
+    return history
 
 @router.get("/", response_model=List[HistoryOut])
 def list_history(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    items = db.query(History).order_by(History.updated_at.desc()).offset(skip).limit(limit).all()
-    return items
+    return db.query(History).offset(skip).limit(limit).all()
 
-
-@router.get("/{ref_personne}", response_model=HistoryOut)
-def get_history(ref_personne: str, db: Session = Depends(get_db)):
-    item = db.query(History).filter(History.ref_personne == ref_personne).first()
-    if not item:
+@router.post("/{ref_personne}/messages", response_model=HistoryMessageOut)
+def add_message(ref_personne: str, msg_in: HistoryMessageCreate, db: Session = Depends(get_db)):
+    history = db.query(History).filter(History.ref_personne == ref_personne).first()
+    if not history:
         raise HTTPException(status_code=404, detail="History not found")
-    return item
+    msg = HistoryMessage(ref_personne=ref_personne, **msg_in.dict())
+    db.add(msg)
+    db.commit()
+    db.refresh(msg)
+    return msg
 
-
-@router.post("/{ref_personne}/recommendations/{product}/messages", response_model=HistoryOut)
-def add_message(ref_personne: str, product: str, payload: HistoryMessageCreate, db: Session = Depends(get_db)):
-    updated = add_message_to_recommendation(db, ref_personne, product, payload)
-    if not updated:
-        raise HTTPException(status_code=404, detail="History / client not found")
-    return updated
+@router.get("/{ref_personne}/messages", response_model=List[HistoryMessageOut])
+def get_messages(ref_personne: str, db: Session = Depends(get_db)):
+    return db.query(HistoryMessage).filter(HistoryMessage.ref_personne == ref_personne).all()

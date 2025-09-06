@@ -1,91 +1,80 @@
-// src/components/HistoryTable.tsx
-import { useState } from "react";
-import type { Client, Recommendation, SentMessage } from "../types/client";
-import MessagesModal from "./MessagesModal";
+"use client"
+
+import { useState } from "react"
+import type { HistoryEntry, Recommendation } from "../types/history"
+import MessagesModal from "./MessagesModal"
+import StatusBadge from "./StatusBadge" // Added StatusBadge import
 
 interface Props {
-  history: Client[];
+  entries: HistoryEntry[]
 }
 
-export default function HistoryTable({ history }: Props) {
+export default function HistoryTable({ entries }: Props) {
   const [selected, setSelected] = useState<{
-    client: Client;
-    recommendation: Recommendation;
-  } | null>(null);
-
-  const latestDateForClient = (c: Client) => {
-    const allMsgs: SentMessage[] = (c.recommended_products ?? [])
-      .flatMap((r: any) => (typeof r === "string" ? [] : (r.messages ?? [])));
-    if (!allMsgs.length) return "-";
-    const latest = allMsgs.reduce((a, b) => (new Date(a.sentAt) > new Date(b.sentAt) ? a : b));
-    return new Date(latest.sentAt).toLocaleString();
-  };
+    entry: HistoryEntry
+    recommendation: Recommendation
+  } | null>(null)
 
   return (
-    <div className="overflow-x-auto bg-white shadow rounded-lg">
-      <table className="w-full text-left">
-        <thead className="bg-red-600 text-white">
-          <tr>
-            <th className="p-2">Ref</th>
-            <th className="p-2">Name</th>
-            <th className="p-2">Rank</th>
-            <th className="p-2">Recommendations</th>
-            <th className="p-2">Date</th>
-            <th className="p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {history.map((c) => (
-            <tr key={c.ref_personne} className="border-t hover:bg-gray-50">
-              <td className="p-2 font-mono">{c.ref_personne}</td>
-              <td className="p-2 font-semibold">{("name" in c ? c.name : (c as any).raison_sociale)}</td>
-              <td className="p-2">{c.rank ?? "-"}</td>
-
-              <td className="p-2">
-                {(c.recommended_products ?? []).map((r: any, i: number) => {
-                  if (typeof r === "string") {
-                    return <div key={i} className="mb-1">{r}</div>;
-                  }
-                  return (
-                    <div key={i} className="mb-2 flex justify-between items-center">
-                      <div>
-                        <span className="font-medium">{r.product}</span>{" "}
-                        <span className="ml-2 px-2 py-0.5 rounded text-xs bg-gray-100">{r.status}</span>
-                        <span className="ml-2 text-sm text-gray-500">{(r.contacts ?? []).join(" & ")}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </td>
-
-              <td className="p-2">{latestDateForClient(c)}</td>
-
-              <td className="p-2">
-                {(c.recommended_products ?? []).map((r: any, idx: number) => {
-                  if (typeof r === "string") return null;
-                  return (
-                    <button
-                      key={idx}
-                      className="px-3 py-1 bg-gray-900 text-white rounded mr-2 mb-2 hover:bg-gray-700 text-sm"
-                      onClick={() => setSelected({ client: c, recommendation: r })}
-                    >
-                      View Messages ({r.product})
-                    </button>
-                  );
-                })}
-              </td>
+    <div className="bg-white rounded-2xl shadow-lg border border-green-100 overflow-hidden">
+      {" "}
+      {/* Updated to green design with rounded corners and green border */}
+      <div className="overflow-x-auto">
+        <table className="w-full border border-green-200">
+          {" "}
+          {/* Updated border to green */}
+          <thead>
+            <tr className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
+              {" "}
+              {/* Updated gradient from red/orange to green/emerald */}
+              <th className="px-4 py-2 text-left">REF</th>
+              <th className="px-4 py-2 text-left">NAME</th>
+              <th className="px-4 py-2 text-left">RANK</th>
+              <th className="px-4 py-2 text-left">RECOMMENDATIONS</th>
+              <th className="px-4 py-2 text-left">ACTIONS</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-
+          </thead>
+          <tbody>
+            {entries.map((entry) => (
+              <tr key={entry.ref_personne} className="border-t border-green-100 hover:bg-green-50/50 transition">
+                {" "}
+                {/* Updated border and hover colors to green */}
+                <td className="px-4 py-2 font-medium text-green-700">{entry.ref_personne}</td>{" "}
+                {/* Updated text color to green */}
+                <td className="px-4 py-2 font-semibold">{entry.name}</td>
+                <td className="px-4 py-2">{entry.rank}</td>
+                <td className="px-4 py-2 space-y-2">
+                  {entry.recommendations.map((rec, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between bg-green-50 border border-green-200 rounded p-2" // Updated background and border to green
+                    >
+                      <span className="font-medium">{rec.product}</span>
+                      <StatusBadge status={rec.status} />{" "}
+                      {/* Replaced inline status styling with StatusBadge component */}
+                      <span className="text-xs text-gray-500 ml-2">via {rec.contact_method}</span>
+                      <button
+                        onClick={() => setSelected({ entry, recommendation: rec })}
+                        className="ml-auto bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded transition shadow-sm" // Updated button colors to green
+                      >
+                        View Messages
+                      </button>
+                    </div>
+                  ))}
+                </td>
+                <td className="px-4 py-2"></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       {selected && (
         <MessagesModal
-          client={selected.client}
+          client={selected.entry}
           recommendation={selected.recommendation}
           onClose={() => setSelected(null)}
         />
       )}
     </div>
-  );
+  )
 }

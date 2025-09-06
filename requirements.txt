@@ -52,3 +52,6 @@ passlib[bcrypt]
 python-jose[cryptography]
 email-validator
 pymysql
+aiosmtplib
+openai
+twilio

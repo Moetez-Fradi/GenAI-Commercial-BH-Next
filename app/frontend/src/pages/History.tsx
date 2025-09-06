@@ -1,76 +1,67 @@
-// src/pages/History.tsx
-import { useEffect, useState } from "react";
-import HistoryTable from "../components/HistoryTable";
-import type { Client, Recommendation, SentMessage } from "../types/client";
-import { fetchHistoryList } from "../services/api";
-import { useAuth } from "../context/AuthContext";
+"use client"
+
+import { useEffect, useState } from "react"
+import HistoryTable from "../components/HistoryTable"
+import type { HistoryEntry } from "../types/history"
+import { motion } from "framer-motion"
+import { RefreshCw } from "lucide-react"
 
 export default function History() {
-  const [history, setHistory] = useState<Client[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { token } = useAuth();
+  const [history, setHistory] = useState<HistoryEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchHistory = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_LINK}/history/`)
+      if (!res.ok) throw new Error("Failed to fetch history")
+      const data = await res.json()
+      setHistory(data)
+    } catch (err: any) {
+      setError(err.message || "Something went wrong")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    async function load() {
-      try {
-        setLoading(true);
-        const data = await fetchHistoryList(token);
-        // backend returns array of history objects — map to Client shape expected by components
-        const mapped: Client[] = data.map((h: any) => {
-          // map recommendations JSON -> recommended_products (Client type)
-          const recs = Array.isArray(h.recommendations)
-            ? h.recommendations.map((r: any) => ({
-                product: r.product,
-                label: r.label,
-                status: r.status ?? "pending",
-                contacts: r.contacts ?? [],
-                messages: Array.isArray(r.messages)
-                  ? r.messages.map((m: any) => ({
-                      id: String(m.id ?? Math.random()),
-                      clientRef: h.ref_personne,
-                      channel: m.channel,
-                      content: m.content,
-                      sentAt: m.sentAt,
-                    }))
-                  : [],
-              }))
-            : [];
+    fetchHistory()
+  }, [])
 
-          // Build a Client-like object; set type to "physique" as fallback
-          return {
-            ref_personne: String(h.ref_personne),
-            name: h.name ?? h.ref_personne,
-            type: "physique",
-            rank: h.rank ?? undefined,
-            status: "pending",
-            recommended_products: recs,
-            recommendation_count: Array.isArray(recs) ? recs.length : 0,
-            lastContact:
-              recs.flatMap((r: any) => (r.contacts ? r.contacts : [])).length > 0
-                ? recs.flatMap((r: any) => (r.contacts ? r.contacts : []))[0]
-                : null,
-            messages: recs.flatMap((r: any) => r.messages ?? []),
-          } as Client;
-        });
-        setHistory(mapped);
-      } catch (err: any) {
-        console.error(err);
-        setError(err.message || "Failed to load history");
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, [token]);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="flex items-center gap-3">
+          <RefreshCw className="w-5 h-5 animate-spin text-primary" />
+          <span className="text-muted-foreground">Loading history...</span>
+        </div>
+      </div>
+    )
+  }
 
-  if (loading) return <p>Loading history...</p>;
-  if (error) return <p className="text-red-600">{error}</p>;
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-destructive/10 border border-destructive/20 rounded-xl p-6"
+      >
+        <p className="text-destructive font-medium">Error loading history</p>
+        <p className="text-destructive/80 text-sm mt-1">{error}</p>
+        <button
+          onClick={fetchHistory}
+          className="mt-4 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors text-sm font-medium"
+        >
+          Try Again
+        </button>
+      </motion.div>
+    )
+  }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-red-600">History</h1>
-      <HistoryTable history={history} />
-    </div>
-  );
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+      <HistoryTable entries={history} />
+    </motion.div>
+  )
 }

@@ -1,79 +1,43 @@
 # app/schemas/history.py
 from pydantic import BaseModel, ConfigDict
-from typing import List, Optional
+from typing import List, Optional, Literal
 from datetime import datetime
-from enum import Enum
 
+# --- Enums as Literals ---
+ClientStatus = Literal["pending", "accepted", "refused", "not_contacted"]
+ContactMethod = Literal["whatsapp", "email", "phone"]
 
-class ContactMethod(str, Enum):
-    whatsapp = "whatsapp"
-    email = "email"
-    phone = "phone"
-
-
-class ClientStatus(str, Enum):
-    pending = "pending"
-    accepted = "accepted"
-    refused = "refused"
-    not_contacted = "not_contacted"
-
-
-model_config = ConfigDict(from_attributes=True)
-
-
-class HistoryMessageCreate(BaseModel):
-    # input when adding a message
-    id: Optional[str] = None
+# --- Messages ---
+class HistoryMessageBase(BaseModel):
     channel: ContactMethod
     content: str
-    sentAt: datetime
+    sentAt: Optional[datetime] = None
 
-    model_config = ConfigDict()
+class HistoryMessageCreate(HistoryMessageBase):
+    id: Optional[str] = None
 
+class HistoryMessageOut(HistoryMessageBase):
+    id: str
 
-class HistoryMessageOut(HistoryMessageCreate):
-    # output; id will be preserved if present
-    model_config = model_config
-
-
+# --- Recommendations ---
 class RecommendationItem(BaseModel):
     product: str
-    label: Optional[str] = None
-    status: Optional[ClientStatus] = ClientStatus.pending
-    contacts: Optional[List[ContactMethod]] = []
-    messages: Optional[List[HistoryMessageOut]] = []
+    status: ClientStatus
+    contact_method: ContactMethod
+    messages: Optional[List[HistoryMessageOut]] = None
 
-    model_config = model_config
-
-
+# --- History rows ---
 class HistoryBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     ref_personne: str
     name: Optional[str] = None
     rank: Optional[int] = None
-    recommendations: Optional[List[RecommendationItem]] = []
-
-    model_config = model_config
-
+    recommendations: List[RecommendationItem] = []
 
 class HistoryCreate(HistoryBase):
     pass
 
-
-class HistoryUpdate(BaseModel):
-    recommendations: Optional[List[RecommendationItem]] = None
-    model_config = model_config
-
-
 class HistoryOut(HistoryBase):
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    model_config = model_config
-
-
-class PaginatedHistoryOut(BaseModel):
-    items: List[HistoryOut]
-    total: Optional[int] = None
-    limit: int
-    offset: int
-    has_more: bool
-    model_config = model_config
+    created_at: datetime
+    updated_at: datetime
