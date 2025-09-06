@@ -1,22 +1,29 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
-import { Home, History, LogOut } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+"use client"
+
+import { Outlet, Link, useLocation } from "react-router-dom"
+import { Home, History, LogOut } from "lucide-react"
+import { useAuth } from "../context/AuthContext"
 
 export default function Layout() {
-  const { pathname } = useLocation();
-  const { logout } = useAuth();
+  const { pathname } = useLocation()
+  const { logout } = useAuth()
 
   const menu = [
     { to: "/dashboard/clients-morales", label: "Clients Morales", icon: <Home size={18} /> },
     { to: "/dashboard/clients-physiques", label: "Clients Physiques", icon: <Home size={18} /> },
-    { to: "/history", label: "History", icon: <History size={18} /> }
-  ];
+    { to: "/history", label: "History", icon: <History size={18} /> },
+  ]
 
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <aside className="w-56 bg-gradient-to-b from-red-600 to-orange-500 text-white flex flex-col">
-        <div className="p-4 font-bold text-xl tracking-wide">GENAI</div>
+      <aside className="w-56 bg-gradient-to-b from-green-600 to-emerald-500 text-white flex flex-col">
+        {" "}
+        {/* Updated gradient from red/orange to green/emerald */}
+        <div className="p-4 font-bold text-xl tracking-wide text-center">
+          BH Assurance <br />
+          <span className="text-green-200">GENAI</span>
+        </div>
         <nav className="flex-1 space-y-2 p-3">
           {menu.map((item) => (
             <Link
@@ -29,10 +36,7 @@ export default function Layout() {
             </Link>
           ))}
         </nav>
-        <button
-          onClick={logout}
-          className="flex items-center gap-2 p-3 hover:bg-white/10 transition"
-        >
+        <button onClick={logout} className="flex items-center gap-2 p-3 hover:bg-white/10 transition">
           <LogOut size={18} /> Logout
         </button>
       </aside>
@@ -42,5 +46,5 @@ export default function Layout() {
         <Outlet />
       </main>
     </div>
-  );
+  )
 }
