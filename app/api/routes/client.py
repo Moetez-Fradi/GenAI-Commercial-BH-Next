@@ -13,7 +13,7 @@ from app.schemas.business_rec import (
     BusinessRecUpdate,
     PaginatedBusinessRecOut,
 )
-from app.schemas.individual_rec import PaginatedIndividualRecOut
+from app.schemas.individual_rec import PaginatedIndividualRecOut,IndividualRecOut
 
 router = APIRouter()
 
@@ -22,13 +22,6 @@ def mysql_order_with_nulls_last(
     direction: Optional[str],       
     fallback_ref_col=None
 ):
-    """
-    Emulate NULLS LAST for MySQL:
-      ORDER BY (col IS NULL) ASC, col ASC|DESC
-    (Non-null rows (0) first, NULL rows (1) last)
-
-    For REF/stable ordering, just order by ref asc/desc without null handling.
-    """
     dir_ = (direction or "desc").lower()
     if primary_col is None:
         if fallback_ref_col is None:
@@ -197,14 +190,6 @@ def list_individual_recs(
     )
 
 
-@router.get("/{ref_personne}", response_model=BusinessRecOut)
-def get_business_rec(ref_personne: int, db: Session = Depends(get_db)):
-    business_rec = db.query(BusinessRec).filter(BusinessRec.REF_PERSONNE == ref_personne).first()
-    if not business_rec:
-        raise HTTPException(status_code=404, detail="Business record not found")
-    return business_rec
-
-
 @router.put("/{ref_personne}", response_model=BusinessRecOut)
 def update_business_rec(ref_personne: int, payload: BusinessRecUpdate, db: Session = Depends(get_db)):
     business_rec = db.query(BusinessRec).filter(BusinessRec.REF_PERSONNE == ref_personne).first()
@@ -233,3 +218,71 @@ def update_recommendations(ref_personne: int, payload: BusinessRecUpdate, db: Se
     db.commit()
     db.refresh(business_rec)
     return business_rec
+
+@router.get("/{ref_personne}")
+def get_client_by_ref(ref_personne: int, db: Session = Depends(get_db)):
+    # Check both tables and determine which one exists
+    business_rec = db.query(BusinessRec).filter(BusinessRec.REF_PERSONNE == ref_personne).first()
+    individual_rec = db.query(IndividualRec).filter(IndividualRec.REF_PERSONNE == ref_personne).first()
+    
+    if business_rec and individual_rec:
+        # This shouldn't happen normally, but handle the case where same REF_PERSONNE exists in both tables
+        raise HTTPException(status_code=400, detail="Client exists in both moral and physical tables")
+    
+    if business_rec:
+        return {
+            "type": "moral",
+            "data": {
+                "REF_PERSONNE": business_rec.REF_PERSONNE,
+                "RAISON_SOCIALE": business_rec.RAISON_SOCIALE,
+                "client_segment": business_rec.client_segment,
+                "risk_profile": business_rec.risk_profile,
+                "client_score": float(business_rec.client_score) if business_rec.client_score is not None else None,
+                "estimated_budget": float(business_rec.estimated_budget) if business_rec.estimated_budget is not None else None,
+                "recommended_products": business_rec.recommended_products,
+                "recommendation_count": business_rec.recommendation_count,
+                "SECTEUR_GROUP": business_rec.SECTEUR_GROUP,
+                "ACTIVITE_GROUP": business_rec.ACTIVITE_GROUP,
+                "BUSINESS_RISK_PROFILE": business_rec.BUSINESS_RISK_PROFILE,
+                "total_capital_assured": business_rec.total_capital_assured,
+                "total_premiums_paid": business_rec.total_premiums_paid,
+                "client_type": business_rec.client_type,
+            }
+        }
+    
+    if individual_rec:
+        return {
+            "type": "physical",
+            "data": {
+                "REF_PERSONNE": individual_rec.REF_PERSONNE,
+                "NOM_PRENOM": individual_rec.NOM_PRENOM,
+                "name": individual_rec.NOM_PRENOM,
+                "client_segment": individual_rec.client_segment,
+                "risk_profile": individual_rec.risk_profile,
+                "client_score": float(individual_rec.client_score) if individual_rec.client_score is not None else None,
+                "estimated_budget": float(individual_rec.estimated_budget) if individual_rec.estimated_budget is not None else None,
+                "AGE": float(individual_rec.AGE) if individual_rec.AGE is not None else None,
+                "PROFESSION_GROUP": individual_rec.PROFESSION_GROUP,
+                "SITUATION_FAMILIALE": individual_rec.SITUATION_FAMILIALE,
+                "SECTEUR_ACTIVITE_GROUP": individual_rec.SECTEUR_ACTIVITE_GROUP,
+                "recommended_products": individual_rec.recommended_products,
+                "recommendation_count": individual_rec.recommendation_count,
+                "client_type": individual_rec.client_type,
+            }
+        }
+    
+    raise HTTPException(status_code=404, detail="Client not found")
+
+@router.get("/morale/{ref_personne}", response_model=BusinessRecOut)
+def get_business_client(ref_personne: int, db: Session = Depends(get_db)):
+    business_rec = db.query(BusinessRec).filter(BusinessRec.REF_PERSONNE == ref_personne).first()
+    if not business_rec:
+        raise HTTPException(status_code=404, detail="Business client not found")
+    return business_rec
+
+@router.get("/physique/{ref_personne}", response_model=IndividualRecOut)
+def get_individual_client(ref_personne: int, db: Session = Depends(get_db)):
+    individual_rec = db.query(IndividualRec).filter(IndividualRec.REF_PERSONNE == ref_personne).first()
+    if not individual_rec:
+        raise HTTPException(status_code=404, detail="Individual client not found")
+    return individual_rec

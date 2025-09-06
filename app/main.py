@@ -6,6 +6,7 @@ from app.api.routes import auth as auth_router
 from app.api.routes.recommendation.recommendation import router as insurance_router
 from app.api.routes import generate as generate_router
 from app.api.routes import history as history_router
+from app.api.routes import alerts as alerts_router
 from fastapi.middleware.cors import CORSMiddleware
 
 Base.metadata.create_all(bind=engine)
@@ -27,3 +28,4 @@ app.include_router(client_router.router, prefix="/clients", tags=["Clients"])
 app.include_router(insurance_router, prefix="/api/recommendation", tags=["insurance"])
 app.include_router(generate_router.router, prefix="/generate", tags=["generate"])
 app.include_router(history_router.router, prefix="/history", tags=["History"])
+app.include_router(alerts_router.router,prefix="/alerts",tags=["alerts"])

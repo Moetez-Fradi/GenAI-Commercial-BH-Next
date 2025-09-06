@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Home, History, LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { AlertTriangle } from "lucide-react";
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -9,7 +10,8 @@ export default function Layout() {
   const menu = [
     { to: "/dashboard/clients-morales", label: "Clients Morales", icon: <Home size={18} /> },
     { to: "/dashboard/clients-physiques", label: "Clients Physiques", icon: <Home size={18} /> },
-    { to: "/history", label: "History", icon: <History size={18} /> }
+    { to: "/history", label: "History", icon: <History size={18} /> },
+        { to: "/dashboard/alerts", label: "Alerts", icon: <AlertTriangle size={18} /> }
   ];
 
   return (
