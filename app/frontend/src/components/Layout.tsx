@@ -4,10 +4,6 @@ import { Outlet, Link, useLocation } from "react-router-dom"
 import { Home, History, LogOut, AlertTriangle } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
 
-import { Outlet, Link, useLocation } from "react-router-dom"
-import { Home, History, LogOut } from "lucide-react"
-import { useAuth } from "../context/AuthContext"
-
 export default function Layout() {
   const { pathname } = useLocation()
   const { logout } = useAuth()
