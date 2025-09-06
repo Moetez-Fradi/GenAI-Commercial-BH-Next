@@ -76,3 +76,15 @@ export interface ClientMoral {
 
 /* -------------------- Unified Type -------------------- */
 export type Client = ClientPhysique | ClientMoral;
+
+/* ---------------- Alerts --------------------------------*/
+export interface Alert {
+  ref_personne: string;
+  alert_type: string;
+  alert_message: string;
+  alert_severity: string;
+  product?: string;
+  expiration_date?: string;
+  days_until_expiry?: number;
+  type: "alert";
+}

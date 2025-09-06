@@ -5,6 +5,7 @@ from app.api.routes import auth as auth_router
 from app.api.routes.recommendation.recommendation import router as insurance_router
 from app.api.routes import generate as generate_router
 from app.api.routes import history as history_router
+from app.api.routes import alerts as alerts_router
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes.email import router as email_router
 from app.api.routes.whatsapp import router as whatsapp_router
@@ -30,3 +31,4 @@ app.include_router(generate_router.router, prefix="/generate", tags=["generate"]
 app.include_router(history_router.router, prefix="/history", tags=["History"])
 app.include_router(email_router, prefix="/email", tags=["Email"])
 app.include_router(whatsapp_router, prefix="/whatsapp", tags=["WhatsApp"])
+app.include_router(alerts_router.router,prefix="/alerts",tags=["alerts"])
