@@ -8,7 +8,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 import Clients from "./pages/ClientsPhysiques";
-
+import Alerts from "./pages/Alerts";
 // Redirects unauthenticated users -> login
 // Redirects authenticated users -> dashboard
 function CatchAllRedirect() {
@@ -57,6 +57,7 @@ export default function App() {
             <Route path="dashboard/clients-morales" index element={<Dashboard />} />
             <Route path="dashboard/clients-physiques" index element={<Clients />} />
             <Route path="history" element={<History />} />
+            <Route path="dashboard/alerts" element={<Alerts />} />
           </Route>
 
           {/* Catch-all for everything else */}
