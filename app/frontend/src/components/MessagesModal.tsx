@@ -1,21 +1,41 @@
-import type { Client, Recommendation } from "../types/client";
+import { type HistoryEntry, type Recommendation, type SentMessage } from "../types/history";
+import { useEffect, useState } from "react";
 
 interface Props {
-  client: Client;
+  client: HistoryEntry;
   recommendation: Recommendation;
   onClose: () => void;
 }
 
 export default function MessagesModal({ client, recommendation, onClose }: Props) {
+  const [messages, setMessages] = useState<SentMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_LINK}/history/${client.ref_personne}/messages`
+        );
+        if (!res.ok) throw new Error("Failed to fetch messages");
+        const data = await res.json();
+        setMessages(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMessages();
+  }, [client.ref_personne]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white w-full max-w-2xl rounded-lg shadow-lg animate-fadeIn">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="text-lg font-semibold text-gray-800">
-            Messages – {client.ref_personne} (
-            {"name" in client ? client.name : client.raison_sociale}) –{" "}
-            {recommendation.product}
+            Messages – {client.ref_personne} ({client.name}) – {recommendation.product}
           </h2>
           <button
             onClick={onClose}
@@ -27,14 +47,16 @@ export default function MessagesModal({ client, recommendation, onClose }: Props
 
         {/* Messages */}
         <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
-          {recommendation.messages && recommendation.messages.length > 0 ? (
-            recommendation.messages.map((msg) => (
+          {loading ? (
+            <p className="text-gray-500 italic">Loading messages...</p>
+          ) : messages.length > 0 ? (
+            messages.map((msg) => (
               <div
                 key={msg.id}
                 className="border rounded-lg p-3 bg-gray-50 shadow-sm"
               >
                 <div className="text-xs text-gray-500 mb-1">
-                  {new Date(msg.sentAt).toLocaleString()} • via{" "}
+                  {new Date(msg.sent_at).toLocaleString()} • via{" "}
                   <span className="capitalize">{msg.channel}</span>
                 </div>
                 <p className="text-gray-800">{msg.content}</p>

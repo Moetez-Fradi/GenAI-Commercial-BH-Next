@@ -1,66 +1,68 @@
-// src/pages/Clients.tsx
-import { useState, useEffect } from "react";
-import ClientTable from "../components/ClientTable";
-import { useAuth } from "../context/AuthContext";
-import type { ClientPhysique } from "../types/client";
+import { useState, useEffect } from "react"
+import ClientTable from "../components/ClientTable"
+import { useAuth } from "../context/AuthContext"
+import type { ClientPhysique } from "../types/client"
+import { motion } from "framer-motion"
+import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
 
 export default function Clients() {
-  const [physiques, setPhysiques] = useState<ClientPhysique[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [physiques, setPhysiques] = useState<ClientPhysique[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // pagination state
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
-  const limit = 10;
+  const [offset, setOffset] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
+  const limit = 10
 
-  const { token } = useAuth();
+  const { token } = useAuth()
 
   // case-insensitive helper to pick the first present property
   const getVal = (obj: any, keys: string[]) => {
-    if (!obj) return undefined;
+    if (!obj) return undefined
     const map = Object.keys(obj).reduce<Record<string, any>>((acc, k) => {
-      acc[k.toLowerCase()] = obj[k];
-      return acc;
-    }, {});
+      acc[k.toLowerCase()] = obj[k]
+      return acc
+    }, {})
     for (const k of keys) {
-      const v = map[k.toLowerCase()];
-      if (v !== undefined && v !== null) return v;
+      const v = map[k.toLowerCase()]
+      if (v !== undefined && v !== null) return v
     }
-    return undefined;
-  };
+    return undefined
+  }
 
   const fetchClients = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
 
     try {
-      const url = new URL(`${import.meta.env.VITE_BACKEND_LINK}/clients/physique`);
-      url.searchParams.set("limit", String(limit));
-      url.searchParams.set("offset", String(offset));
-      url.searchParams.set("include_total", "false");
+      const url = new URL(`${import.meta.env.VITE_BACKEND_LINK}/clients/physique`)
+      url.searchParams.set("limit", String(limit))
+      url.searchParams.set("offset", String(offset))
+      url.searchParams.set("include_total", "false")
 
       const res = await fetch(url.toString(), {
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-      });
+      })
 
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.detail || "Failed to fetch clients");
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data?.detail || "Failed to fetch clients")
       }
 
-      const json = await res.json();
-      const items: any[] = json.items ?? [];
+      const json = await res.json()
+      const items: any[] = json.items ?? []
 
       // Map backend objects to ClientPhysique more robustly
       const mapped: ClientPhysique[] = items.map((it: any) => {
-        const ref = getVal(it, ["REF_PERSONNE", "ref_personne", "ref", "id"]) ?? "";
-        const name = getVal(it, ["NOM_PRENOM", "name", "nom_prenom", "full_name"]) ?? "";
+        const ref = getVal(it, ["REF_PERSONNE", "ref_personne", "ref", "id"]) ?? ""
+        const name = getVal(it, ["NOM_PRENOM", "name", "nom_prenom", "full_name"]) ?? ""
 
-        const rawRecs = getVal(it, ["recommended_products", "recommendedProducts", "recommended", "recommendations"]) ?? [];
+        const rawRecs =
+          getVal(it, ["recommended_products", "recommendedProducts", "recommended", "recommendations"]) ?? []
         const recommended_products =
           Array.isArray(rawRecs) && rawRecs.length
             ? rawRecs.map((rp: any) => ({
@@ -69,24 +71,24 @@ export default function Clients() {
                 score: rp?.score !== undefined && rp?.score !== null ? Number(rp.score) : null,
                 raw: rp,
               }))
-            : [];
+            : []
 
-        const rank = getVal(it, ["rank", "RANK"]);
-        const clientScore = getVal(it, ["client_score", "score", "SCORE", "clientScore"]);
-        const clientSegment = getVal(it, ["client_segment", "segment", "CLIENT_SEGMENT"]);
-        const riskProfile = getVal(it, ["risk_profile", "riskProfile", "RISK_PROFILE"]);
-        const estimatedBudget = getVal(it, ["estimated_budget", "estimatedBudget", "budget_estime"]);
+        const rank = getVal(it, ["rank", "RANK"])
+        const clientScore = getVal(it, ["client_score", "score", "SCORE", "clientScore"])
+        const clientSegment = getVal(it, ["client_segment", "segment", "CLIENT_SEGMENT"])
+        const riskProfile = getVal(it, ["risk_profile", "riskProfile", "RISK_PROFILE"])
+        const estimatedBudget = getVal(it, ["estimated_budget", "estimatedBudget", "budget_estime"])
 
-        const age = getVal(it, ["AGE", "age"]);
-        const profession_group = getVal(it, ["PROFESSION_GROUP", "profession_group", "professionGroup"]);
-        const situation_familiale = getVal(it, ["SITUATION_FAMILIALE", "situation_familiale", "situationFamiliale"]);
-        const secteur_activite = getVal(it, ["SECTEUR_ACTIVITE_GROUP", "secteur_activite", "secteur_activite_group"]);
+        const age = getVal(it, ["AGE", "age"])
+        const profession_group = getVal(it, ["PROFESSION_GROUP", "profession_group", "professionGroup"])
+        const situation_familiale = getVal(it, ["SITUATION_FAMILIALE", "situation_familiale", "situationFamiliale"])
+        const secteur_activite = getVal(it, ["SECTEUR_ACTIVITE_GROUP", "secteur_activite", "secteur_activite_group"])
 
-        const city = getVal(it, ["city", "ville", "adresse_ville"]);
-        const phone = getVal(it, ["phone", "telephone", "tele", "mobile"]);
-        const email = getVal(it, ["email", "courriel", "mail"]);
-        const lastContact = getVal(it, ["lastContact", "last_contact", "lastcontact"]);
-        const messages = getVal(it, ["messages", "Messages"]) ?? [];
+        const city = getVal(it, ["city", "ville", "adresse_ville"])
+        const phone = getVal(it, ["phone", "telephone", "tele", "mobile"])
+        const email = getVal(it, ["email", "courriel", "mail"])
+        const lastContact = getVal(it, ["lastContact", "last_contact", "lastcontact"])
+        const messages = getVal(it, ["messages", "Messages"]) ?? []
 
         return {
           ref_personne: String(ref),
@@ -116,62 +118,91 @@ export default function Clients() {
           recommended_products,
           lastContact: lastContact ?? undefined,
           messages: Array.isArray(messages) ? messages : [],
-        };
-      });
+        }
+      })
 
-      setPhysiques(mapped);
-      console.log("Fetched physiques:", mapped);
-      setHasMore(Boolean(json.has_more) || false);
+      setPhysiques(mapped)
+      console.log("Fetched physiques:", mapped)
+      setHasMore(Boolean(json.has_more) || false)
     } catch (err: any) {
-      setError(err?.message || "Something went wrong");
+      setError(err?.message || "Something went wrong")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchClients();
+    fetchClients()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offset, token]);
+  }, [offset, token])
 
   const updateClient = (u: ClientPhysique) =>
-    setPhysiques((prev) => prev.map((c) => (c.ref_personne === u.ref_personne ? u : c)));
+    setPhysiques((prev) => prev.map((c) => (c.ref_personne === u.ref_personne ? u : c)))
 
   const markMessaged = (ref: string) =>
-    setPhysiques((prev) =>
-      prev.map((c) => (c.ref_personne === ref ? { ...c, lastContact: "whatsapp" } : c))
-    );
+    setPhysiques((prev) => prev.map((c) => (c.ref_personne === ref ? { ...c, lastContact: "whatsapp" } : c)))
 
-  if (loading) return <p>Loading clients...</p>;
-  if (error) return <p className="text-red-600">{error}</p>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="flex items-center gap-3">
+          <RefreshCw className="w-5 h-5 animate-spin text-primary" />
+          <span className="text-muted-foreground">Loading clients...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-destructive/10 border border-destructive/20 rounded-xl p-6"
+      >
+        <p className="text-destructive font-medium">Error loading clients</p>
+        <p className="text-destructive/80 text-sm mt-1">{error}</p>
+        <button
+          onClick={fetchClients}
+          className="mt-4 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors text-sm font-medium"
+        >
+          Try Again
+        </button>
+      </motion.div>
+    )
+  }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-red-600">Clients Physiques</h1>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <ClientTable
-        title="Clients Physiques"
+        title="Individual Clients"
         clients={physiques}
         onUpdateClient={updateClient}
         onMessageSent={markMessaged}
       />
 
       {/* Pagination controls */}
-      <div className="flex justify-between items-center mt-4">
-        <button
-          disabled={offset === 0}
-          onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
-          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
-        >
-          ← Previous
-        </button>
-        <button
-          disabled={!hasMore}
-          onClick={() => setOffset((prev) => prev + limit)}
-          className="px-3 py-1 rounded bg-gray-200 disabled:opacity-50"
-        >
-          Next →
-        </button>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">Showing {physiques.length} clients</p>
+        <div className="flex items-center gap-2">
+          <button
+            disabled={offset === 0}
+            onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
+            className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent/10 transition-colors text-sm font-medium"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Previous
+          </button>
+          <button
+            disabled={!hasMore}
+            onClick={() => setOffset((prev) => prev + limit)}
+            className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent/10 transition-colors text-sm font-medium"
+          >
+            Next
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    </motion.div>
+  )
 }
