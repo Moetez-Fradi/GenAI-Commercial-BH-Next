@@ -9,6 +9,8 @@ from app.api.routes import alerts as alerts_router
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes.email import router as email_router
 from app.api.routes.whatsapp import router as whatsapp_router
+from app.api.routes.contracts import router as contracts_router
+from app.core.tasks.alert_updater import start_scheduler, stop_scheduler
 
 Base.metadata.create_all(bind=engine)
 
@@ -32,3 +34,12 @@ app.include_router(history_router.router, prefix="/history", tags=["History"])
 app.include_router(email_router, prefix="/email", tags=["Email"])
 app.include_router(whatsapp_router, prefix="/whatsapp", tags=["WhatsApp"])
 app.include_router(alerts_router.router,prefix="/alerts",tags=["alerts"])
+app.include_router(contracts_router, prefix="/contracts", tags=["contracts"])
+
+# @app.on_event("startup")
+# async def on_startup():
+#     start_scheduler()
+
+# @app.on_event("shutdown")
+# async def on_shutdown():
+#     stop_scheduler()
