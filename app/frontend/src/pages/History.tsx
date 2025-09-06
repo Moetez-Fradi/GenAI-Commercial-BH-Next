@@ -59,6 +59,33 @@ export default function History() {
     )
   }
 
+  if (!loading && history.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col items-center justify-center py-12 text-center"
+      >
+        <div className="bg-green-50 border border-green-200 rounded-xl p-8 max-w-md">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-green-900 mb-2">No History</h3>
+          <p className="text-green-700 text-sm">
+            No history entries found. Activity will appear here once actions are performed.
+          </p>
+        </div>
+      </motion.div>
+    )
+  }
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <HistoryTable entries={history} />
