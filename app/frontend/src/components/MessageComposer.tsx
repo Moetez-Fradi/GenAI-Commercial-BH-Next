@@ -1,9 +1,7 @@
-// src/components/MessageComposer.tsx
 import { useEffect, useState } from "react";
 import type { Client, ContactMethod } from "../types/client";
 import Modal from "./Modal";
 import { useAuth } from "../context/AuthContext";
-// removed sendMessage import since we now call backend endpoints directly
 
 interface Props {
   client: Client;
@@ -19,6 +17,7 @@ export default function MessageComposer({
   initialMessage,
 }: Props) {
   const [message, setMessage] = useState(initialMessage ?? "");
+  const [customPrompt, setCustomPrompt] = useState("");
   const [busy, setBusy] = useState(false);
   const { token } = useAuth();
 
@@ -33,10 +32,21 @@ export default function MessageComposer({
     );
   };
 
+  // Build a clearer, more structured set of messages for the LLM
   const buildMessages = (c: Client) => {
     const msgs: { role: string; content: string }[] = [];
 
-    // include previous messages lightly as assistant context
+    // System instruction: role + hard constraints
+    msgs.push({
+      role: "system",
+      content:
+        "You are a concise, professional sales assistant that writes short commercial pitches suitable for WhatsApp or email. " +
+        "Always return ONLY the pitch text (no commentary, no metadata). Keep the pitch to 2–3 short sentences and include a single short call-to-action (CTA). " +
+        "Avoid emojis, hashtags, and long sign-offs. Use available customer details (age, city, status) to personalize the pitch when relevant. " +
+        "If the pitch is intended for email, keep it slightly more formal and still short.",
+    });
+
+    // include previous messages lightly as assistant context (if available)
     const anyC: any = c as any;
     if (Array.isArray(anyC.messages) && anyC.messages.length) {
       anyC.messages.forEach((m: any) => {
@@ -49,7 +59,7 @@ export default function MessageComposer({
     const firstRec =
       Array.isArray(anyC.recommended_products) && anyC.recommended_products.length
         ? anyC.recommended_products[0]
-        : undefined;
+        : anyC.recommended_products;
     const product = pickProduct(firstRec);
 
     const ref = anyC.ref_personne;
@@ -63,21 +73,29 @@ export default function MessageComposer({
     if ("city" in anyC && anyC.city) details.push(`city: ${anyC.city}`);
     if ("status" in anyC && anyC.status) details.push(`status: ${anyC.status}`);
 
+    // Primary user instruction describing the actual task
     msgs.push({
       role: "user",
       content:
-        `You are a concise sales assistant. Write a short, friendly commercial pitch (2-3 sentences) proposing "${product}" to ${who}. ` +
+        `Task: write a short, helpful sales pitch proposing \"${product}\" to ${who}. ` +
         (details.length ? `Customer details: ${details.join(", ")}. ` : "") +
-        "Make the tone professional and helpful, include one short call-to-action (CTA), and keep it suitable for WhatsApp or email. " +
-        "Return only the pitch text (no extra commentary).",
+        "Tone: professional and helpful. Length: 2–3 short sentences. Include exactly one short CTA (e.g., 'Reply to this message to get 10% off' or 'Would you like a quick quote?'). " +
+        "Channel: message must be suitable for WhatsApp or for email as a short body. Output only the pitch text (no headings, no signatures, no extra notes).",
     });
 
     return msgs;
   };
 
-  const callLLM = async (c: Client) => {
+  const callLLM = async (c: Client, userPrompt?: string) => {
     const BACKEND = import.meta.env.VITE_BACKEND_LINK?.replace(/\/$/, "") ?? "";
     if (!BACKEND) throw new Error("VITE_BACKEND_LINK is not configured");
+
+    const messages = buildMessages(c);
+    // If the user entered a custom prompt, pass it as an additional 'user' message
+    if (userPrompt && userPrompt.trim()) {
+      messages.push({ role: "user", content: `User prompt: ${userPrompt.trim()}` });
+    }
+
     const res = await fetch(`${BACKEND}/generate`, {
       method: "POST",
       headers: {
@@ -85,7 +103,7 @@ export default function MessageComposer({
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({
-        messages: buildMessages(c),
+        messages,
         temperature: 1.0,
         max_tokens: 300,
       }),
@@ -121,7 +139,8 @@ export default function MessageComposer({
   const regenManual = async () => {
     setBusy(true);
     try {
-      const m = await callLLM(client);
+      // send customPrompt if user provided one
+      const m = await callLLM(client, customPrompt);
       setMessage(m);
     } catch (err: any) {
       console.error("Regenerate failed", err);
@@ -170,8 +189,6 @@ export default function MessageComposer({
     return s;
   };
 
-
-          // this should be changed when the contacts are available
   const send = async (channel: ContactMethod) => {
     if (!message.trim()) {
       alert("Message is empty.");
@@ -188,15 +205,6 @@ export default function MessageComposer({
     try {
       if (channel === "whatsapp") {
         const rawPhone = extractPhone(client as any);
-        // if (!rawPhone) {
-        //   alert("No phone number found for this client.");
-        //   return;
-        // }
-        // const localNumber = sanitizeTunisianLocalNumber(rawPhone);
-        // if (!/^\d+$/.test(localNumber)) {
-        //   alert("Client phone number looks invalid after sanitization: " + localNumber);
-        //   return;
-        // }
 
         const firstRec =
           Array.isArray(client.recommended_products) && client.recommended_products.length
@@ -210,9 +218,9 @@ export default function MessageComposer({
           message: message,
           ref_personne: String(client.ref_personne),
           recommendations: [
-            { product: product, status: "pending", contact_method: "whatsapp" }
-          ]
-        }
+            { product: product, status: "pending", contact_method: "whatsapp" },
+          ],
+        };
 
         const res = await fetch(`${BACKEND}/whatsapp/send_whatsapp`, {
           method: "POST",
@@ -229,15 +237,10 @@ export default function MessageComposer({
         }
 
         const json = await res.json();
-        // optionally check json.status or sid
         onSent(channel, message);
         onClose();
       } else if (channel === "email") {
         const recipient = extractEmail(client as any);
-        // if (!recipient) {
-        //   alert("No email address found for this client.");
-        //   return;
-        // }
 
         const anyC: any = client as any;
         const firstRec =
@@ -246,7 +249,7 @@ export default function MessageComposer({
             : undefined;
         const product = pickProduct(firstRec);
         const subject = `Quick proposal: ${product}`;
-        
+
         const payload = {
           recipient: "truetoneofficial1@gmail.com",
           subject,
@@ -306,6 +309,19 @@ export default function MessageComposer({
         onChange={(e) => setMessage(e.target.value)}
         placeholder="Your pitch will appear here..."
       />
+
+      {/* custom prompt bar: optional user prompt sent to LLM when regenerating */}
+      <div className="mt-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Custom prompt (optional)</label>
+        <textarea
+          rows={3}
+          className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-orange-300"
+          value={customPrompt}
+          onChange={(e) => setCustomPrompt(e.target.value)}
+          placeholder="Optional: tweak the tone, emphasise urgency, ask to mention a discount, or request a different CTA. This will be appended to the LLM input when you press Regenerate."
+        />
+        <p className="text-xs text-gray-500 mt-1">If provided, this will be sent to the LLM as an extra user prompt when generating.</p>
+      </div>
 
       <div className="mt-4 flex flex-wrap gap-3">
         <button
