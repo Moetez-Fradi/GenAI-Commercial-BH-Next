@@ -1,132 +1,84 @@
-"use client"
+// src/app/clients/morales/page.tsx  (or your existing path; keep filename consistent)
+"use client";
 
-import { useState, useEffect } from "react"
-import ClientTable from "../components/ClientTable"
-import { useAuth } from "../context/AuthContext"
-import type { ClientMoral } from "../types/client"
-import { motion } from "framer-motion"
-import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
+import { useState, useEffect, useCallback } from "react";
+import ClientTable from "../components/ClientTable";
+import { useAuth } from "../context/AuthContext";
+import { motion } from "framer-motion";
+import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 
-export default function Clients() {
-  const [morales, setMorales] = useState<ClientMoral[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+export default function ClientsMorales() {
+  const [morales, setMorales] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // pagination state
-  const [offset, setOffset] = useState(0)
-  const [hasMore, setHasMore] = useState(false)
-  const limit = 10
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const limit = 10;
 
-  const { token } = useAuth()
+  const { token } = useAuth();
 
-  const fetchClients = async () => {
-    setLoading(true)
-    setError(null)
+  // Filters state (lifted to parent)
+  const [filters, setFilters] = useState({
+    sortBy: "score" as "score" | "ref",
+    sortDir: "desc" as "asc" | "desc",
+    moraleSegment: "",
+    moraleRisk: "",
+  });
 
+  const fetchClients = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const url = new URL(`${import.meta.env.VITE_BACKEND_LINK}/clients/morale`)
-      url.searchParams.set("limit", String(limit))
-      url.searchParams.set("offset", String(offset))
-      url.searchParams.set("include_total", "false")
+      const url = new URL(`${import.meta.env.VITE_BACKEND_LINK}/clients/morale`);
+      url.searchParams.set("limit", String(limit));
+      url.searchParams.set("offset", String(offset));
+      url.searchParams.set("include_total", "false");
+      url.searchParams.set("sort_by", filters.sortBy);
+      url.searchParams.set("sort_dir", filters.sortDir);
+      if (filters.moraleSegment) url.searchParams.set("segment", filters.moraleSegment);
+      if (filters.moraleRisk) url.searchParams.set("business_risk", filters.moraleRisk);
 
       const res = await fetch(url.toString(), {
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      })
-
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data?.detail || "Failed to fetch clients")
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.detail || `Failed to fetch clients: ${res.status}`);
       }
-
-      const json = await res.json()
-      const items: any[] = json.items ?? []
-
-      // Map backend objects to ClientMoral
-      const mapped: ClientMoral[] = items.map((it: any) => {
-        const ref = it.REF_PERSONNE ?? it.ref_personne ?? ""
-        const raison = it.RAISON_SOCIALE ?? it.raison_sociale ?? ""
-
-        // normalize recommended_products: keep strings, convert objects to { product, label, score, raw }
-        const recommended_products: (
-          | string
-          | {
-              product?: string | null
-              label?: string | null
-              score?: number | null
-              raw?: any
-            }
-        )[] = Array.isArray(it.recommended_products)
-          ? it.recommended_products.map((rp: any) => {
-              if (typeof rp === "string") return rp
-
-              return {
-                product: rp.product ?? rp.product_id ?? rp.label ?? rp.product_name ?? undefined,
-                label: rp.label ?? undefined,
-                score: rp.score !== undefined && rp.score !== null ? Number(rp.score) : undefined,
-                raw: rp,
-              }
-            })
-          : []
-
-        // optional messages mapping (light normalization)
-        const messages =
-          Array.isArray(it.messages) && it.messages.length
-            ? it.messages.map((m: any) => ({
-                id: String(m.id ?? m.message_id ?? Math.random()),
-                clientRef: String(ref),
-                channel: (m.channel ?? m.channel_type ?? undefined) as any,
-                content: m.content ?? m.body ?? "",
-                sentAt: m.sentAt ?? m.sent_at ?? new Date().toISOString(),
-              }))
-            : undefined
-
-        return {
-          ref_personne: String(ref),
-          type: "moral",
-          raison_sociale: raison,
-          recommended_products,
-          recommendation_count: it.recommendation_count ?? 0,
-          client_score: it.client_score !== undefined && it.client_score !== null ? Number(it.client_score) : undefined,
-          client_segment: it.client_segment ?? undefined,
-          risk_profile: it.risk_profile ?? undefined,
-          estimated_budget:
-            it.estimated_budget !== undefined && it.estimated_budget !== null ? Number(it.estimated_budget) : undefined,
-          total_capital_assured:
-            it.total_capital_assured !== undefined && it.total_capital_assured !== null
-              ? Number(it.total_capital_assured)
-              : undefined,
-          total_premiums_paid:
-            it.total_premiums_paid !== undefined && it.total_premiums_paid !== null
-              ? Number(it.total_premiums_paid)
-              : undefined,
-          lastContact: it.lastContact ?? it.last_contact ?? undefined,
-          messages,
-        }
-      })
-
-      setMorales(mapped)
-      console.log("Fetched morales:", mapped)
-      setHasMore(Boolean(json.has_more) || false)
+      const json = await res.json();
+      const items: any[] = json.items ?? [];
+      // Map to shape expected by ClientTable
+      const mapped = items.map((it) => ({ ...it, type: "moral" }));
+      setMorales(mapped);
+      setHasMore(Boolean(json.has_more) || items.length === limit);
     } catch (err: any) {
-      setError(err?.message || "Something went wrong")
+      setError(err?.message || "Something went wrong");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  }, [offset, filters, token]);
 
   useEffect(() => {
-    fetchClients()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offset, token])
+    fetchClients();
+  }, [fetchClients]);
 
-  const updateClient = (u: ClientMoral) =>
-    setMorales((prev) => prev.map((c) => (c.ref_personne === u.ref_personne ? u : c)))
+  const updateClient = (u: any) => setMorales((prev) => prev.map((c) => (c.ref_personne === u.ref_personne ? u : c)));
 
-  const markMessaged = (ref: string) =>
-    setMorales((prev) => prev.map((c) => (c.ref_personne === ref ? { ...c, lastContact: "whatsapp" } : c)))
+  const markMessaged = (ref: string) => setMorales((prev) => prev.map((c) => (c.ref_personne === ref ? { ...c, lastContact: "whatsapp" } : c)));
+
+  // Called by ClientTable when user applies filters
+  const onApplyFilters = async (payload: any) => {
+    // update filters and reset offset to 0 then fetch
+    setFilters({
+      sortBy: payload.sortBy,
+      sortDir: payload.sortDir,
+      moraleSegment: payload.moraleSegment ?? "",
+      moraleRisk: payload.moraleRisk ?? "",
+    });
+    setOffset(0);
+    // fetch will run due to dependency on filters and offset
+  };
 
   if (loading) {
     return (
@@ -136,53 +88,19 @@ export default function Clients() {
           <span className="text-muted-foreground">Loading clients...</span>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-destructive/10 border border-destructive/20 rounded-xl p-6"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-destructive/10 border border-destructive/20 rounded-xl p-6">
         <p className="text-destructive font-medium">Error loading clients</p>
         <p className="text-destructive/80 text-sm mt-1">{error}</p>
-        <button
-          onClick={fetchClients}
-          className="mt-4 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors text-sm font-medium"
-        >
+        <button onClick={fetchClients} className="mt-4 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors text-sm font-medium">
           Try Again
         </button>
       </motion.div>
-    )
-  }
-
-  if (!loading && morales.length === 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center justify-center py-12 text-center"
-      >
-        <div className="bg-green-50 border border-green-200 rounded-xl p-8 max-w-md">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-              />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-green-900 mb-2">No Corporate Clients</h3>
-          <p className="text-green-700 text-sm">
-            No corporate clients found. They will appear here once added to the system.
-          </p>
-        </div>
-      </motion.div>
-    )
+    );
   }
 
   return (
@@ -192,30 +110,21 @@ export default function Clients() {
         clients={morales}
         onUpdateClient={updateClient}
         onMessageSent={markMessaged}
+        onApplyFilters={onApplyFilters}
+        currentFilters={filters}
       />
 
-      {/* Pagination controls */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">Showing {morales.length} clients</p>
         <div className="flex items-center gap-2">
-          <button
-            disabled={offset === 0}
-            onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
-            className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent/10 transition-colors text-sm font-medium"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Previous
+          <button disabled={offset === 0} onClick={() => setOffset((prev) => Math.max(0, prev - limit))} className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg disabled:opacity-50">
+            <ChevronLeft className="w-4 h-4" /> Previous
           </button>
-          <button
-            disabled={!hasMore}
-            onClick={() => setOffset((prev) => prev + limit)}
-            className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent/10 transition-colors text-sm font-medium"
-          >
-            Next
-            <ChevronRight className="w-4 h-4" />
+          <button disabled={!hasMore} onClick={() => setOffset((prev) => prev + limit)} className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg disabled:opacity-50">
+            Next <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
     </motion.div>
-  )
+  );
 }
