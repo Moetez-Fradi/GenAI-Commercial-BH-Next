@@ -79,10 +79,14 @@ export default function Alerts() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="flex items-center gap-3">
-          <RefreshCw className="w-5 h-5 animate-spin text-primary" />
-          <span className="text-muted-foreground">Loading alerts...</span>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex items-center gap-3 px-6 py-4 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20"
+        >
+          <RefreshCw className="w-5 h-5 animate-spin text-purple-400" />
+          <span className="text-white/70 font-medium">Loading alerts...</span>
+        </motion.div>
       </div>
     )
   }
@@ -92,16 +96,19 @@ export default function Alerts() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-destructive/10 border border-destructive/20 rounded-xl p-6"
+        className="bg-red-500/10 backdrop-blur-xl border border-red-500/20 rounded-xl p-8 shadow-xl"
       >
-        <p className="text-destructive font-medium">Error loading alerts</p>
-        <p className="text-destructive/80 text-sm mt-1">{error}</p>
-        <button
+        <p className="text-red-400 font-medium text-lg mb-2">Error loading alerts</p>
+        <p className="text-white/70 text-sm">{error}</p>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={fetchAlerts}
-          className="mt-4 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors text-sm font-medium"
+          className="mt-6 px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl hover:from-red-600 hover:to-pink-600 transition-all duration-300 text-sm font-medium shadow-lg flex items-center gap-2"
         >
+          <RefreshCw className="w-4 h-4" />
           Try Again
-        </button>
+        </motion.button>
       </motion.div>
     )
   }
@@ -113,9 +120,15 @@ export default function Alerts() {
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col items-center justify-center py-12 text-center"
       >
-        <div className="bg-green-50 border border-green-200 rounded-xl p-8 max-w-md">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl p-8 max-w-md shadow-xl">
+          <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", damping: 10, stiffness: 100 }}
+            className="w-20 h-20 bg-gradient-to-br from-yellow-500/20 to-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative"
+          >
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-500 to-red-500 opacity-20 blur-xl animate-pulse" />
+            <svg className="w-10 h-10 text-white relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -123,9 +136,11 @@ export default function Alerts() {
                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
               />
             </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-green-900 mb-2">No Alerts</h3>
-          <p className="text-green-700 text-sm">
+          </motion.div>
+          <h3 className="text-xl font-semibold text-white mb-3 bg-gradient-to-r from-yellow-400 to-red-400 bg-clip-text text-transparent">
+            No Alerts
+          </h3>
+          <p className="text-white/70">
             No alerts found. Important notifications will appear here when available.
           </p>
         </div>
@@ -134,28 +149,38 @@ export default function Alerts() {
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      <AlertTable title="Alerts" alerts={alerts} onUpdateAlert={updateAlert} />
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      className="space-y-6"
+    >
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl shadow-xl overflow-hidden">
+        <AlertTable title="Alerts" alerts={alerts} onUpdateAlert={updateAlert} />
+      </div>
 
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Showing {alerts.length} alerts</p>
-        <div className="flex items-center gap-2">
-          <button
+      <div className="flex items-center justify-between px-4">
+        <p className="text-sm text-white/60">Showing {alerts.length} alerts</p>
+        <div className="flex items-center gap-3">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             disabled={offset === 0}
             onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
-            className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent/10 transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:bg-white/20"
           >
             <ChevronLeft className="w-4 h-4" />
             Previous
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             disabled={!hasMore}
             onClick={() => setOffset((prev) => prev + limit)}
-            className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-accent/10 transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 text-white hover:from-purple-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 rounded-xl shadow-lg"
           >
             Next
             <ChevronRight className="w-4 h-4" />
-          </button>
+          </motion.button>
         </div>
       </div>
     </motion.div>

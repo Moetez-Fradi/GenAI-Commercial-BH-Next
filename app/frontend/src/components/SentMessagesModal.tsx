@@ -6,25 +6,31 @@ export default function SentMessagesModal({ client, onClose }: { client: Client;
 
   return (
     <Modal open={true} onClose={onClose}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-red-600">Sent messages — {client.name}</h3>
-        <button onClick={onClose} className="px-2 py-1 rounded hover:bg-gray-100">✕</button>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-semibold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+          Sent Messages — {client.name}
+        </h3>
+        <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 transition-all duration-300 text-white">
+          ✕
+        </button>
       </div>
 
       {msgs.length ? (
-        <ul className="space-y-3 max-h-[50vh] overflow-auto">
+        <ul className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
           {msgs.map(m => (
-            <li key={m.id} className="border rounded-lg p-3">
-              <div className="text-xs text-gray-500 mb-1 flex justify-between">
-                <span className="capitalize">{m.channel}</span>
+            <li key={m.id} className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+              <div className="text-sm text-white/50 mb-2 flex items-center justify-between">
+                <span className="text-cyan-400 capitalize">{m.channel}</span>
                 <span>{new Date(m.sentAt).toLocaleString()}</span>
               </div>
-              <div className="whitespace-pre-wrap text-sm">{m.content}</div>
+              <div className="whitespace-pre-wrap text-sm text-white">{m.content}</div>
             </li>
           ))}
         </ul>
       ) : (
-        <div className="text-gray-500">No messages sent yet.</div>
+        <div className="text-white/50 italic flex items-center justify-center py-8">
+          No messages sent yet.
+        </div>
       )}
     </Modal>
   );
