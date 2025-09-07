@@ -32,4 +32,18 @@ def add_message(ref_personne: str, msg_in: HistoryMessageCreate, db: Session = D
 
 @router.get("/{ref_personne}/messages", response_model=List[HistoryMessageOut])
 def get_messages(ref_personne: str, db: Session = Depends(get_db)):
-    return db.query(HistoryMessage).filter(HistoryMessage.ref_personne == ref_personne).all()
+    # Debug: log incoming param and its type
+    print("get_messages ref_personne:", ref_personne, "type:", type(ref_personne))
+
+    # Try matching as-is
+    msgs = db.query(HistoryMessage).filter(HistoryMessage.ref_personne == ref_personne).all()
+
+    # If none found and the ref looks numeric, try integer match
+    if not msgs and str(ref_personne).isdigit():
+        try:
+            msgs = db.query(HistoryMessage).filter(HistoryMessage.ref_personne == int(ref_personne)).all()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"DB query error: {e}")
+
+    print("messages found:", len(msgs))
+    return msgs

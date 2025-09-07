@@ -9,15 +9,16 @@ ContactMethod = Literal["whatsapp", "email", "phone"]
 
 # --- Messages ---
 class HistoryMessageBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     channel: ContactMethod
     content: str
-    sentAt: Optional[datetime] = None
+    sent_at: Optional[datetime] = None
 
 class HistoryMessageCreate(HistoryMessageBase):
     id: Optional[str] = None
 
 class HistoryMessageOut(HistoryMessageBase):
-    id: str
+    id: int
 
 # --- Recommendations ---
 class RecommendationItem(BaseModel):

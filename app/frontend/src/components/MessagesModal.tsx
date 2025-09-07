@@ -17,6 +17,7 @@ export default function MessagesModal({ client, recommendation, onClose }: Props
         const res = await fetch(
           `${import.meta.env.VITE_BACKEND_LINK}/history/${client.ref_personne}/messages`
         );
+        console.log(`${import.meta.env.VITE_BACKEND_LINK}/history/${client.ref_personne}/messages`)
         if (!res.ok) throw new Error("Failed to fetch messages");
         const data = await res.json();
         setMessages(data);

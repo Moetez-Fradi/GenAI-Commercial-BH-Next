@@ -8,7 +8,7 @@ class History(Base):
     ref_personne = Column(String(50), primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     rank = Column(Integer, nullable=False)
-    recommendations = Column(JSON, nullable=False)  # list of recommendations with status + contact method
+    recommendations = Column(JSON, nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 

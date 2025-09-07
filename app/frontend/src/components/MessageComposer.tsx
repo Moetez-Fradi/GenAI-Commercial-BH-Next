@@ -198,10 +198,21 @@ export default function MessageComposer({
         //   return;
         // }
 
+        const firstRec =
+          Array.isArray(client.recommended_products) && client.recommended_products.length
+            ? client.recommended_products[0]
+            : client.recommended_products;
+
+        const product = pickProduct(firstRec);
+
         const payload = {
           phone_number: "26907092",
           message: message,
-        };
+          ref_personne: String(client.ref_personne),
+          recommendations: [
+            { product: product, status: "pending", contact_method: "whatsapp" }
+          ]
+        }
 
         const res = await fetch(`${BACKEND}/whatsapp/send_whatsapp`, {
           method: "POST",
@@ -237,9 +248,18 @@ export default function MessageComposer({
         const subject = `Quick proposal: ${product}`;
         
         const payload = {
-          recipient : "truetoneofficial1@gmail.com",
+          recipient: "truetoneofficial1@gmail.com",
           subject,
           body: message,
+          ref_personne: String(client.ref_personne),
+          rank: client.rank ? client.rank : 0,
+          recommendations: [
+            {
+              product: product,
+              status: "pending",
+              contact_method: "email",
+            },
+          ],
         };
 
         const res = await fetch(`${BACKEND}/email/send_email`, {

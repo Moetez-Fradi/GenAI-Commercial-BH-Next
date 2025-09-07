@@ -98,40 +98,99 @@ def _send_whatsapp_sync(msg: MessageRequest, to_addr: str):
 def _create_or_update_history_and_message(db: Session, data: dict, channel: str = "whatsapp"):
     """
     Synchronous DB helper to create History (if missing) and append a HistoryMessage.
-    Returns dict with ref_personne and message id.
+    - Normalizes incoming recommendations
+    - Merges incoming recs with existing history.recommendations by (product, contact_method)
+    Returns dict with ref_personne and message id and saved recommendations.
     """
-    recs = []
+    # --- normalize incoming recommendations ---
+    recs_in = []
     if data.get("recommendations"):
         for r in data["recommendations"]:
-            if not all(k in r for k in ("product", "status", "contact_method")):
-                raise ValueError("Each recommendation must include product, status and contact_method")
-            recs.append(dict(r))
+            # accept either dict-like or pydantic object
+            if not isinstance(r, dict):
+                try:
+                    r = dict(r)
+                except Exception:
+                    raise ValueError("Each recommendation must be a mapping or serializable object")
 
+            # normalize keys and defaults
+            product = r.get("product") or r.get("product_name") or None
+            status = r.get("status") or "pending"
+            contact_method = r.get("contact_method") or r.get("channel") or channel
+
+            if not product:
+                raise ValueError("Each recommendation must include a 'product' field")
+
+            rec_obj = {
+                "product": product,
+                "status": status,
+                "contact_method": contact_method,
+            }
+
+            # copy over other optional fields if present
+            if "notes" in r:
+                rec_obj["notes"] = r["notes"]
+            if "metadata" in r:
+                rec_obj["metadata"] = r["metadata"]
+
+            recs_in.append(rec_obj)
+
+    # --- load or create history ---
     history = db.query(History).filter(History.ref_personne == data["ref_personne"]).first()
+
     if not history:
+        # prefer an explicit name; do NOT fallback phone into name if you want separate contact storage.
+        # existing behavior kept but you may want to separate contact into its own column later.
         history = History(
             ref_personne=data["ref_personne"],
             name=data.get("name") or data.get("phone_number") or "<unknown>",
             rank=int(data.get("rank") or 0),
-            recommendations=recs or []
+            recommendations=recs_in or []
         )
         db.add(history)
         db.commit()
         db.refresh(history)
     else:
-        if recs:
-            history.recommendations = recs
+        # merge recommendations (incoming updates existing by product+contact_method)
+        if recs_in:
+            existing_recs = history.recommendations or []
+            # build map key -> rec
+            merged = {}
+            def key_for(r):
+                return (str(r.get("product")), str(r.get("contact_method")))
+
+            # add existing first (so incoming can override)
+            for er in existing_recs:
+                merged[key_for(er)] = dict(er)
+
+            # apply/overwrite with incoming
+            for nr in recs_in:
+                k = key_for(nr)
+                # if exists, update fields (status, notes, metadata)
+                if k in merged:
+                    merged[k].update(nr)
+                else:
+                    merged[k] = dict(nr)
+
+            # store as list
+            history.recommendations = list(merged.values())
             db.add(history)
             db.commit()
             db.refresh(history)
 
-    # create HistoryMessage content: prefer plaintext message, otherwise store template info
+    # --- create HistoryMessage content: prefer plaintext message, otherwise store template info ---
     if data.get("message"):
         content_text = data["message"]
     else:
         content_text = f"template:{data.get('content_sid')}"
         if data.get("content_variables"):
             content_text += " vars:" + json.dumps(data["content_variables"])
+
+    # include a short reference to the recommendation in the message content if provided
+    if recs_in:
+        # attach the first rec summary to the message content for traceability
+        first = recs_in[0]
+        content_text = f"{content_text}\n\n[rec:{first.get('product')} via {first.get('contact_method')}]"
 
     msg = HistoryMessage(
         ref_personne=history.ref_personne,
@@ -142,7 +201,11 @@ def _create_or_update_history_and_message(db: Session, data: dict, channel: str 
     db.commit()
     db.refresh(msg)
 
-    return {"ref_personne": history.ref_personne, "message_id": msg.id}
+    return {
+        "ref_personne": history.ref_personne,
+        "message_id": msg.id,
+        "saved_recommendations": history.recommendations
+    }
 
 
 @router.post("/send_whatsapp")
