@@ -3,7 +3,7 @@ import type React from "react"
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
-import { Shield, Mail, Lock, User, Eye, EyeOff, CheckCircle } from "lucide-react"
+import { Shield, Mail, Lock, User, Eye, EyeOff, CheckCircle, Sparkles, Star } from "lucide-react"
 
 export default function Signup() {
   const [name, setName] = useState("")
@@ -65,200 +65,270 @@ export default function Signup() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-lime-50 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Animated background elements */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Animated Background */}
       <div className="absolute inset-0">
-        <div className="absolute top-16 right-24 w-28 h-28 bg-green-200/30 rounded-full blur-xl animate-pulse"></div>
-        <div
-          className="absolute top-32 left-16 w-36 h-36 bg-emerald-300/25 rounded-full blur-2xl animate-bounce"
-          style={{ animationDelay: "0.8s" }}
-        ></div>
-        <div
-          className="absolute bottom-40 right-16 w-32 h-32 bg-lime-200/35 rounded-full blur-lg animate-pulse"
-          style={{ animationDelay: "1.2s" }}
-        ></div>
-        <div
-          className="absolute bottom-16 left-24 w-24 h-24 bg-green-300/40 rounded-full blur-xl animate-bounce"
-          style={{ animationDelay: "2s" }}
-        ></div>
-        <div
-          className="absolute top-2/3 right-8 w-20 h-20 bg-emerald-200/30 rounded-full blur-lg animate-pulse"
-          style={{ animationDelay: "0.3s" }}
-        ></div>
-        <div
-          className="absolute top-1/4 left-8 w-40 h-40 bg-lime-300/20 rounded-full blur-2xl animate-bounce"
-          style={{ animationDelay: "2.5s" }}
-        ></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/20 via-slate-900/40 to-slate-900" />
+        
+        {/* Floating elements */}
+        <motion.div
+          animate={{ 
+            rotate: 360,
+            scale: [1, 1.2, 1],
+          }}
+          transition={{ 
+            rotate: { duration: 30, repeat: Infinity, ease: "linear" },
+            scale: { duration: 6, repeat: Infinity, ease: "easeInOut" }
+          }}
+          className="absolute top-20 left-16 w-32 h-32 rounded-full bg-gradient-to-br from-cyan-500/30 to-purple-500/30 blur-xl"
+        />
+        <motion.div
+          animate={{ 
+            rotate: -360,
+            y: [-20, 20, -20],
+          }}
+          transition={{ 
+            rotate: { duration: 25, repeat: Infinity, ease: "linear" },
+            y: { duration: 8, repeat: Infinity, ease: "easeInOut" }
+          }}
+          className="absolute bottom-32 right-20 w-40 h-40 rounded-2xl bg-gradient-to-br from-purple-500/25 to-pink-500/25 blur-2xl"
+        />
       </div>
 
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-[url('/images/pattern.png')] opacity-5"></div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="relative w-full max-w-md"
-      >
-        {/* Main Card */}
-        <div className="bg-white/90 backdrop-blur-xl border border-green-200/50 rounded-2xl shadow-2xl shadow-green-500/10 p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl mb-4 shadow-lg shadow-green-500/25"
-            >
-              <Shield className="w-8 h-8 text-white drop-shadow-sm" />
-            </motion.div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
-            <p className="text-gray-600">Join our insurance platform today</p>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSignup} className="space-y-6">
-            {/* Name Field */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Full Name</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-green-600" />
-                <input
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Email Field */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-green-600" />
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Password Field */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-green-600" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Create a strong password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all duration-200"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-green-600 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-
-              {/* Password Strength Indicators */}
-              {password && (
-                <div className="space-y-2 mt-3">
-                  <div className="flex items-center gap-2 text-xs">
-                    <CheckCircle
-                      className={`w-4 h-4 ${passwordStrength.hasLength ? "text-green-600" : "text-gray-400"}`}
-                    />
-                    <span className={passwordStrength.hasLength ? "text-green-600" : "text-gray-500"}>
-                      At least 8 characters
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <CheckCircle
-                      className={`w-4 h-4 ${passwordStrength.hasUpper ? "text-green-600" : "text-gray-400"}`}
-                    />
-                    <span className={passwordStrength.hasUpper ? "text-green-600" : "text-gray-500"}>
-                      One uppercase letter
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <CheckCircle
-                      className={`w-4 h-4 ${passwordStrength.hasLower ? "text-green-600" : "text-gray-400"}`}
-                    />
-                    <span className={passwordStrength.hasLower ? "text-green-600" : "text-gray-500"}>
-                      One lowercase letter
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <CheckCircle
-                      className={`w-4 h-4 ${passwordStrength.hasNumber ? "text-green-600" : "text-gray-400"}`}
-                    />
-                    <span className={passwordStrength.hasNumber ? "text-green-600" : "text-gray-500"}>One number</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-3 bg-red-50 border border-red-200 rounded-lg"
-              >
-                <p className="text-sm text-red-600">{error}</p>
-              </motion.div>
-            )}
-
-            {/* Submit Button */}
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-green-500/25"
-            >
-              {loading ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Creating Account...
-                </>
-              ) : (
-                "Create Account"
-              )}
-            </motion.button>
-          </form>
-
-          {/* Footer */}
-          <div className="mt-8 text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{" "}
-              <Link to="/login" className="text-green-600 font-medium hover:text-green-700 transition-colors">
-                Sign In
-              </Link>
-            </p>
-          </div>
-        </div>
-
-        {/* Trust Indicators */}
+      <div className="relative z-10 w-full max-w-md">
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="mt-6 text-center"
+          initial={{ opacity: 0, y: 30, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
         >
+          {/* Main Card */}
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ 
+                  delay: 0.3, 
+                  type: "spring", 
+                  stiffness: 200, 
+                  damping: 15 
+                }}
+                className="relative inline-flex items-center justify-center w-20 h-20 mb-6"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-2xl shadow-lg animate-pulse" />
+                <div className="relative flex items-center justify-center w-full h-full">
+                  <Shield className="w-10 h-10 text-white drop-shadow-lg" />
+                </div>
+              </motion.div>
+              
+              <motion.h1 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="text-4xl font-bold text-white mb-2"
+              >
+                Create Account
+              </motion.h1>
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+                className="text-white/70 text-lg"
+              >
+                Join our premium platform today
+              </motion.p>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSignup} className="space-y-6">
+              {/* Name Field */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.7 }}
+                className="space-y-2"
+              >
+                <label className="text-sm font-medium text-white/80 flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Full Name
+                </label>
+                <div className="relative group">
+                  <input
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all duration-300"
+                    required
+                  />
+                  <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-cyan-400" />
+                </div>
+              </motion.div>
+
+              {/* Email Field */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.8 }}
+                className="space-y-2"
+              >
+                <label className="text-sm font-medium text-white/80 flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  Email Address
+                </label>
+                <div className="relative group">
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all duration-300"
+                    required
+                  />
+                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-cyan-400" />
+                </div>
+              </motion.div>
+
+              {/* Password Field */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.9 }}
+                className="space-y-2"
+              >
+                <label className="text-sm font-medium text-white/80 flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  Password
+                </label>
+                <div className="relative group">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Create a strong password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-12 pr-14 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all duration-300"
+                    required
+                  />
+                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-cyan-400" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-cyan-400 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+
+                {/* Password Strength Indicators */}
+                {password && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="space-y-2 mt-3"
+                  >
+                    <div className="flex items-center gap-2 text-xs">
+                      <CheckCircle
+                        className={`w-4 h-4 transition-colors ${passwordStrength.hasLength ? "text-green-400" : "text-white/40"}`}
+                      />
+                      <span className={`transition-colors ${passwordStrength.hasLength ? "text-green-400" : "text-white/60"}`}>
+                        At least 8 characters
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <CheckCircle
+                        className={`w-4 h-4 transition-colors ${passwordStrength.hasUpper ? "text-green-400" : "text-white/40"}`}
+                      />
+                      <span className={`transition-colors ${passwordStrength.hasUpper ? "text-green-400" : "text-white/60"}`}>
+                        One uppercase letter
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <CheckCircle
+                        className={`w-4 h-4 transition-colors ${passwordStrength.hasLower ? "text-green-400" : "text-white/40"}`}
+                      />
+                      <span className={`transition-colors ${passwordStrength.hasLower ? "text-green-400" : "text-white/60"}`}>
+                        One lowercase letter
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <CheckCircle
+                        className={`w-4 h-4 transition-colors ${passwordStrength.hasNumber ? "text-green-400" : "text-white/40"}`}
+                      />
+                      <span className={`transition-colors ${passwordStrength.hasNumber ? "text-green-400" : "text-white/60"}`}>
+                        One number
+                      </span>
+                    </div>
+                  </motion.div>
+                )}
+              </motion.div>
+
+              {/* Error Message */}
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 backdrop-blur-sm"
+                >
+                  <p className="text-sm text-red-400 font-medium">{error}</p>
+                </motion.div>
+              )}
+
+              {/* Submit Button */}
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.0 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-700 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-lg shadow-lg"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Creating Account...
+                  </>
+                ) : (
+                  "Create Account"
+                )}
+              </motion.button>
+            </form>
+
+            {/* Footer */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.1 }}
+              className="mt-8 text-center"
+            >
+              <p className="text-white/70">
+                Already have an account?{" "}
+                <Link 
+                  to="/login" 
+                  className="text-cyan-400 font-medium hover:text-cyan-300 transition-colors hover:underline"
+                >
+                  Sign In
+                </Link>
+              </p>
+            </motion.div>
+          </div>
+
+          {/* Trust Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2 }}
+            className="mt-6 text-center"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-blue-500/20 text-sm text-white/70">
+              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              Trusted & Secure Platform
+            </div>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      </div>
     </div>
   )
 }
