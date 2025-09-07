@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { motion } from "framer-motion"
 import { SlidersHorizontal, X, User, Building } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
 import AlertDetailsPopup from "./AlertDetailsPopup"
@@ -156,7 +157,7 @@ export default function AlertTable({ title, alerts, onUpdateAlert }: AlertTableP
       setShowFilters(false)
     } catch (err) {
       console.error(err)
-      alert(err?.message ?? "Failed to apply filters")
+      alert(err instanceof Error ? err.message : "Failed to apply filters")
     } finally {
       setLoadingFilter(false)
     }
@@ -175,34 +176,38 @@ export default function AlertTable({ title, alerts, onUpdateAlert }: AlertTableP
   }, [alerts])
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3 border-b bg-gradient-to-r from-green-600 to-emerald-600 text-white">
-        <h3 className="font-semibold text-lg">{title}</h3>
-        <div className="flex items-center gap-2">
+    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl overflow-hidden">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-gradient-to-r from-purple-600 to-cyan-600">
+        <h3 className="font-semibold text-lg text-white">{title}</h3>
+        <div className="flex items-center gap-3">
           {filtered && (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={clearFilters}
-              className="text-xs px-3 py-1 rounded bg-white/20 hover:bg-white/30 transition"
+              className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 text-white text-sm"
             >
               Clear
-            </button>
+            </motion.button>
           )}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setShowFilters((s) => !s)}
-            className="text-xs px-3 py-1 rounded bg-white/20 hover:bg-white/30 transition flex items-center gap-1"
+            className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300 text-white text-sm flex items-center gap-2"
           >
-            <SlidersHorizontal size={14} /> Filters
-          </button>
+            <SlidersHorizontal size={16} /> Filters
+          </motion.button>
         </div>
       </div>
 
       {showFilters && (
-        <div className="px-5 py-4 border-b bg-gray-50">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="flex flex-col">
-              <label className="text-xs text-gray-600 mb-1">Sort By</label>
+        <div className="px-6 py-5 border-b border-white/10 bg-white/5 backdrop-blur-lg">
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm text-white/70">Sort By</label>
               <select
-                className="text-sm border rounded px-2 py-1"
+                className="text-sm bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all duration-300"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
               >
@@ -210,10 +215,10 @@ export default function AlertTable({ title, alerts, onUpdateAlert }: AlertTableP
                 <option value="ref">Reference</option>
               </select>
             </div>
-            <div className="flex flex-col">
-              <label className="text-xs text-gray-600 mb-1">Direction</label>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm text-white/70">Direction</label>
               <select
-                className="text-sm border rounded px-2 py-1"
+                className="text-sm bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all duration-300"
                 value={sortDir}
                 onChange={(e) => setSortDir(e.target.value)}
               >
@@ -221,10 +226,10 @@ export default function AlertTable({ title, alerts, onUpdateAlert }: AlertTableP
                 <option value="desc">Descending</option>
               </select>
             </div>
-            <div className="flex flex-col">
-              <label className="text-xs text-gray-600 mb-1">Alert Type</label>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm text-white/70">Alert Type</label>
               <select
-                className="text-sm border rounded px-2 py-1"
+                className="text-sm bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all duration-300"
                 value={alertType}
                 onChange={(e) => setAlertType(e.target.value)}
               >
@@ -236,10 +241,10 @@ export default function AlertTable({ title, alerts, onUpdateAlert }: AlertTableP
                 ))}
               </select>
             </div>
-            <div className="flex flex-col">
-              <label className="text-xs text-gray-600 mb-1">Product</label>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm text-white/70">Product</label>
               <select
-                className="text-sm border rounded px-2 py-1"
+                className="text-sm bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all duration-300"
                 value={product}
                 onChange={(e) => setProduct(e.target.value)}
               >
@@ -251,20 +256,24 @@ export default function AlertTable({ title, alerts, onUpdateAlert }: AlertTableP
                 ))}
               </select>
             </div>
-            <div className="ml-auto flex items-center gap-2">
-              <button
+            <div className="ml-auto flex items-center gap-3">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setShowFilters(false)}
-                className="px-3 py-1 text-sm rounded border bg-white hover:bg-gray-100 flex items-center gap-1"
+                className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 hover:bg-white/20 transition-all duration-300 text-white text-sm flex items-center gap-2"
               >
-                <X size={14} /> Close
-              </button>
-              <button
+                <X size={16} /> Close
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={applyFilters}
                 disabled={loadingFilter}
-                className="px-3 py-1 text-sm rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-600 text-white hover:from-purple-700 hover:to-cyan-700 disabled:opacity-50 transition-all duration-300 text-sm shadow-lg"
               >
                 {loadingFilter ? "Applying..." : "Apply"}
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>
@@ -272,15 +281,15 @@ export default function AlertTable({ title, alerts, onUpdateAlert }: AlertTableP
 
       <div className="overflow-x-hidden">
         <table className="w-full table-fixed text-left">
-          <thead className="bg-gray-50 text-gray-600 text-sm uppercase">
+          <thead className="bg-white/5 text-white/70 text-sm uppercase font-medium border-b border-white/10">
             <tr>
-              <th className="p-3 w-20">Ref</th>
-              <th className="p-3 w-48">Alert Type</th>
-              <th className="p-3">Message</th>
-              <th className="p-3 w-48">Client Details</th>
-              <th className="p-3 w-24">Severity</th>
-              <th className="p-3 w-36">Product</th>
-              <th className="p-3 w-24">Days Left</th>
+              <th className="p-4 w-20">Ref</th>
+              <th className="p-4 w-48">Alert Type</th>
+              <th className="p-4">Message</th>
+              <th className="p-4 w-48">Client Details</th>
+              <th className="p-4 w-24">Severity</th>
+              <th className="p-4 w-36">Product</th>
+              <th className="p-4 w-24">Days Left</th>
             </tr>
           </thead>
 
@@ -293,92 +302,95 @@ export default function AlertTable({ title, alerts, onUpdateAlert }: AlertTableP
               }
 
               return (
-                <tr
+                <motion.tr
                   key={alert.ref_personne}
-                  className="border-b hover:bg-gray-50 transition cursor-pointer"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+                  className="border-b border-white/10 cursor-pointer transition-all duration-300"
                   onClick={() => setSelected(alert)}
                 >
-                  <td className="p-3 align-top">{alert.ref_personne}</td>
-                  <td className="p-3 font-medium align-top">{alert.alert_type}</td>
-                  <td className="p-3 align-top text-sm">{alert.alert_message}</td>
-                  <td className="p-3 align-top">
-                    <div className="flex items-center gap-2">
+                  <td className="p-4 align-top font-medium text-purple-400">{alert.ref_personne}</td>
+                  <td className="p-4 font-medium align-top text-white">{alert.alert_type}</td>
+                  <td className="p-4 align-top text-sm text-white/70">{alert.alert_message}</td>
+                  <td className="p-4 align-top">
+                    <div className="flex items-start gap-3">
                       {clientDetails.type === "moral" ? (
-                        <Building size={16} className="text-blue-600 flex-shrink-0" />
+                        <Building size={18} className="text-cyan-400 flex-shrink-0 mt-1" />
                       ) : clientDetails.type === "physical" ? (
-                        <User size={16} className="text-green-600 flex-shrink-0" />
+                        <User size={18} className="text-purple-400 flex-shrink-0 mt-1" />
                       ) : null}
                       <div className="min-w-0 flex-1">
-                        <div className="font-medium text-sm truncate">{clientDetails.name}</div>
+                        <div className="font-medium text-sm text-white truncate">{clientDetails.name}</div>
 
                         {clientDetails.segment && (
-                          <div className="text-xs text-gray-500">Segment: {clientDetails.segment}</div>
+                          <div className="text-xs text-white/50">Segment: {clientDetails.segment}</div>
                         )}
 
                         {clientDetails.riskProfile && (
-                          <div className="text-xs text-gray-500">Risk: {clientDetails.riskProfile}</div>
+                          <div className="text-xs text-white/50">Risk: {clientDetails.riskProfile}</div>
                         )}
 
                         {clientDetails.score !== undefined && clientDetails.score !== null && (
-                          <div className="text-xs text-gray-500">Score: {Math.round(Number(clientDetails.score))}</div>
+                          <div className="text-xs text-white/50">Score: {Math.round(Number(clientDetails.score))}</div>
                         )}
 
                         {/* Additional details for physical clients */}
                         {clientDetails.type === "physical" && clientDetails.age && (
-                          <div className="text-xs text-gray-500">Age: {clientDetails.age}</div>
+                          <div className="text-xs text-white/50">Age: {clientDetails.age}</div>
                         )}
 
                         {clientDetails.type === "physical" && clientDetails.profession && (
-                          <div className="text-xs text-gray-500">Profession: {clientDetails.profession}</div>
+                          <div className="text-xs text-white/50">Profession: {clientDetails.profession}</div>
                         )}
 
                         {clientDetails.type === "physical" && clientDetails.familySituation && (
-                          <div className="text-xs text-gray-500">Family: {clientDetails.familySituation}</div>
+                          <div className="text-xs text-white/50">Family: {clientDetails.familySituation}</div>
                         )}
 
                         {clientDetails.type === "physical" && clientDetails.activitySector && (
-                          <div className="text-xs text-gray-500">Sector: {clientDetails.activitySector}</div>
+                          <div className="text-xs text-white/50">Sector: {clientDetails.activitySector}</div>
                         )}
 
                         {/* Additional details for moral clients if needed */}
                         {clientDetails.type === "moral" && clientDetails.estimatedBudget && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-white/50">
                             Budget: {Math.round(Number(clientDetails.estimatedBudget))}
                           </div>
                         )}
                       </div>
                     </div>
                   </td>
-                  <td className="p-3 align-top">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <td className="p-4 align-top">
+                    <span className="inline-flex items-center px-3 py-1 rounded-xl text-xs font-medium bg-white/10 border border-white/20 text-white/90 backdrop-blur-sm">
                       {alert.alert_severity}
                     </span>
                   </td>
-                  <td className="p-3 align-top">{alert.product || "—"}</td>
-                  <td className="p-3 align-top">
+                  <td className="p-4 align-top text-white/70">{alert.product || "—"}</td>
+                  <td className="p-4 align-top">
                     {alert.days_until_expiry !== undefined ? (
                       <span
                         className={`font-medium ${
                           alert.days_until_expiry <= 7
-                            ? "text-red-600"
+                            ? "text-red-400"
                             : alert.days_until_expiry <= 30
-                              ? "text-orange-600"
-                              : "text-green-600"
+                              ? "text-orange-400"
+                              : "text-emerald-400"
                         }`}
                       >
                         {alert.days_until_expiry}
                       </span>
                     ) : (
-                      <span className="text-gray-400">—</span>
+                      <span className="text-white/40">—</span>
                     )}
                   </td>
-                </tr>
+                </motion.tr>
               )
             })}
 
             {!rows.length && (
               <tr>
-                <td className="p-6 text-center text-gray-400" colSpan={7}>
+                <td className="p-8 text-center text-white/40" colSpan={7}>
                   No alerts found
                 </td>
               </tr>

@@ -91,21 +91,19 @@ export default function ClientDetailsMoralPopup({ client, onClose, onUpdate }: P
   return (
     <Modal open={true} onClose={onClose}>
       <div className="flex flex-col h-[80vh] w-full max-w-2xl">
-        {/* header */}
-        <div className="flex items-center justify-between mb-2 border-b border-green-200 pb-2 sticky top-0 bg-white z-10">
-          {" "}
-          {/* Updated border color to green */}
-          <h2 className="text-lg font-semibold text-green-600">Corporate Clients</h2>{" "}
-          {/* Updated text color from red to green */}
-          <button onClick={onClose} className="px-2 py-1 rounded hover:bg-green-100 transition">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-4 sticky top-0 bg-black/20 backdrop-blur-xl z-10">
+          <h2 className="text-xl font-semibold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+            Corporate Client Details
+          </h2>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 transition-all duration-300 text-white">
             ✕
-          </button>{" "}
-          {/* Updated hover color to green */}
+          </button>
         </div>
 
-        {/* scrollable body */}
+        {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto pr-1">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <Field label="Ref" value={local.ref_personne ?? "—"} />
             <Field label="Type" value={local.type ?? "moral"} />
             <Input
@@ -155,47 +153,43 @@ export default function ClientDetailsMoralPopup({ client, onClose, onUpdate }: P
             />
             <Field label="Last contact" value={String(local.lastContact ?? "—")} />
             <div className="col-span-2">
-              <label className="text-xs text-green-700">Recommended products</label>{" "}
-              {/* Updated label color to green */}
+              <label className="text-sm text-white/50 font-medium">Recommended products</label>
               <input
-                className="mt-1 w-full border border-green-200 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500" // Updated border and focus colors to green
+                className="mt-2 w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30
+                focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300"
                 value={recsString}
                 onChange={(e) => setRecsFromString(e.target.value)}
               />
             </div>
 
             <div className="col-span-2">
-              <label className="text-xs text-green-700">Messages (readonly)</label> {/* Updated label color to green */}
+              <label className="text-sm text-white/50 font-medium">Messages (readonly)</label>
               <textarea
-                className="mt-1 w-full border border-green-200 rounded px-2 py-1 text-sm h-24 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="mt-2 w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30
+                focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 h-24"
                 readOnly
                 value={Array.isArray(local.messages) ? local.messages.join("\n") : String(local.messages ?? "")}
-              />{" "}
-              {/* Updated border and focus colors to green */}
+              />
             </div>
           </div>
         </div>
 
-        {/* footer */}
-        <div className="flex justify-end gap-2 mt-3 border-t border-green-200 pt-2 sticky bottom-0 bg-white z-10">
-          {" "}
-          {/* Updated border color to green */}
+        {/* Footer */}
+        <div className="flex justify-end gap-3 mt-4 border-t border-white/10 pt-4 sticky bottom-0 bg-black/20 backdrop-blur-xl z-10">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 text-white hover:bg-white/10 transition-all duration-300"
+          >
+            Cancel
+          </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 disabled:opacity-50 transition shadow-sm"
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-600 text-white 
+            hover:from-purple-700 hover:to-cyan-700 disabled:opacity-50 transition-all duration-300 shadow-lg"
           >
-            {" "}
-            {/* Updated button colors from gray to green */}
             {saving ? "Saving..." : "Save"}
           </button>
-          <button
-            onClick={onClose}
-            className="bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 transition shadow-sm"
-          >
-            Cancel
-          </button>{" "}
-          {/* Updated cancel button from red to gray for better contrast */}
         </div>
       </div>
     </Modal>
@@ -205,11 +199,9 @@ export default function ClientDetailsMoralPopup({ client, onClose, onUpdate }: P
 /* small helpers */
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="border border-green-200 rounded px-2 py-1 bg-green-50/30">
-      {" "}
-      {/* Updated border color and added subtle green background */}
-      <div className="text-xs text-green-700">{label}</div> {/* Updated label color to green */}
-      <div className="text-sm">{value ?? "—"}</div>
+    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3">
+      <div className="text-sm text-white/50 font-medium">{label}</div>
+      <div className="text-sm mt-1 text-purple-400 font-medium">{value ?? "—"}</div>
     </div>
   )
 }
@@ -222,14 +214,14 @@ function Input({
 }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
   return (
     <div>
-      <label className="text-xs text-green-700">{label}</label> {/* Updated label color to green */}
+      <label className="text-sm text-white/50 font-medium">{label}</label>
       <input
-        className="mt-1 w-full border border-green-200 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+        className="mt-2 w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30
+        focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         type={type}
-      />{" "}
-      {/* Updated border and focus colors to green */}
+      />
     </div>
   )
 }

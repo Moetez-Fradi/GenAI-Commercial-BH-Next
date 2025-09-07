@@ -31,42 +31,45 @@ export default function MessagesModal({ client, recommendation, onClose }: Props
   }, [client.ref_personne]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white w-full max-w-2xl rounded-lg shadow-lg animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 w-full max-w-2xl rounded-2xl shadow-xl">
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-lg font-semibold text-gray-800">
-            Messages – {client.ref_personne} ({client.name}) – {recommendation.product}
+        <div className="flex justify-between items-center p-6 border-b border-white/10">
+          <h2 className="text-xl font-semibold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+            Messages – <span className="text-purple-400">{client.ref_personne}</span> ({client.name}) – {recommendation.product}
           </h2>
           <button
             onClick={onClose}
-            className="text-red-600 font-bold text-lg hover:text-red-800"
+            className="p-2 rounded-lg hover:bg-white/10 transition-all duration-300 text-white"
           >
-            ×
+            ✕
           </button>
         </div>
 
         {/* Messages */}
-        <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
+        <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
           {loading ? (
-            <p className="text-gray-500 italic">Loading messages...</p>
+            <div className="text-white/50 italic flex items-center justify-center py-8">
+              Loading messages...
+            </div>
           ) : messages.length > 0 ? (
             messages.map((msg) => (
               <div
                 key={msg.id}
-                className="border rounded-lg p-3 bg-gray-50 shadow-sm"
+                className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4"
               >
-                <div className="text-xs text-gray-500 mb-1">
-                  {new Date(msg.sent_at).toLocaleString()} • via{" "}
-                  <span className="capitalize">{msg.channel}</span>
+                <div className="text-sm text-white/50 mb-2 flex items-center gap-2">
+                  <span>{new Date(msg.sent_at).toLocaleString()}</span>
+                  <span className="text-white/30">•</span>
+                  <span className="text-cyan-400 capitalize">{msg.channel}</span>
                 </div>
-                <p className="text-gray-800">{msg.content}</p>
+                <p className="text-white">{msg.content}</p>
               </div>
             ))
           ) : (
-            <p className="text-gray-500 text-sm italic">
+            <div className="text-white/50 italic flex items-center justify-center py-8">
               No messages found for this recommendation.
-            </p>
+            </div>
           )}
         </div>
       </div>

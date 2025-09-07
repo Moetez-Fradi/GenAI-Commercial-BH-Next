@@ -16,53 +16,43 @@ export default function HistoryTable({ entries }: Props) {
   } | null>(null)
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-green-100 overflow-hidden">
-      {" "}
-      {/* Updated to green design with rounded corners and green border */}
+    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full border border-green-200">
-          {" "}
-          {/* Updated border to green */}
+        <table className="w-full">
           <thead>
-            <tr className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
-              {" "}
-              {/* Updated gradient from red/orange to green/emerald */}
-              <th className="px-4 py-2 text-left">REF</th>
-              <th className="px-4 py-2 text-left">NAME</th>
-              <th className="px-4 py-2 text-left">RANK</th>
-              <th className="px-4 py-2 text-left">RECOMMENDATIONS</th>
-              <th className="px-4 py-2 text-left">ACTIONS</th>
+            <tr className="bg-gradient-to-r from-purple-600 to-cyan-600 text-white">
+              <th className="px-4 py-4 text-left text-sm font-medium uppercase">Ref</th>
+              <th className="px-4 py-4 text-left text-sm font-medium uppercase">Name</th>
+              <th className="px-4 py-4 text-left text-sm font-medium uppercase">Rank</th>
+              <th className="px-4 py-4 text-left text-sm font-medium uppercase">Recommendations</th>
+              <th className="px-4 py-4 text-left text-sm font-medium uppercase">Actions</th>
             </tr>
           </thead>
           <tbody>
             {entries.map((entry) => (
-              <tr key={entry.ref_personne} className="border-t border-green-100 hover:bg-green-50/50 transition">
-                {" "}
-                {/* Updated border and hover colors to green */}
-                <td className="px-4 py-2 font-medium text-green-700">{entry.ref_personne}</td>{" "}
-                {/* Updated text color to green */}
-                <td className="px-4 py-2 font-semibold">{entry.name}</td>
-                <td className="px-4 py-2">{entry.rank}</td>
-                <td className="px-4 py-2 space-y-2">
+              <tr key={entry.ref_personne} className="border-b border-white/10 hover:bg-white/5 transition-all duration-300">
+                <td className="px-4 py-4 font-medium text-purple-400">{entry.ref_personne}</td>
+                <td className="px-4 py-4 font-medium text-white">{entry.name}</td>
+                <td className="px-4 py-4 text-white/70">{entry.rank}</td>
+                <td className="px-4 py-4 space-y-3">
                   {entry.recommendations.map((rec, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between bg-green-50 border border-green-200 rounded p-2" // Updated background and border to green
+                      className="flex items-center justify-between bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-3"
                     >
-                      <span className="font-medium">{rec.product}</span>
-                      <StatusBadge status={rec.status} />{" "}
-                      {/* Replaced inline status styling with StatusBadge component */}
-                      <span className="text-xs text-gray-500 ml-2">via {rec.contact_method}</span>
+                      <span className="font-medium text-white">{rec.product}</span>
+                      <StatusBadge status={rec.status} />
+                      <span className="text-xs text-white/50">via {rec.contact_method}</span>
                       <button
                         onClick={() => setSelected({ entry, recommendation: rec })}
-                        className="ml-auto bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded transition shadow-sm" // Updated button colors to green
+                        className="ml-auto px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-600 text-white hover:from-purple-700 hover:to-cyan-700 transition-all duration-300 text-sm shadow-lg"
                       >
                         View Messages
                       </button>
                     </div>
                   ))}
                 </td>
-                <td className="px-4 py-2"></td>
+                <td className="px-4 py-4"></td>
               </tr>
             ))}
           </tbody>

@@ -83,9 +83,9 @@ export default function ClientsMorales() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="flex items-center gap-3">
-          <RefreshCw className="w-5 h-5 animate-spin text-primary" />
-          <span className="text-muted-foreground">Loading clients...</span>
+        <div className="flex items-center gap-3 px-6 py-4 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20">
+          <RefreshCw className="w-5 h-5 animate-spin text-purple-400" />
+          <span className="text-white/70 font-medium">Loading clients...</span>
         </div>
       </div>
     );
@@ -93,36 +93,66 @@ export default function ClientsMorales() {
 
   if (error) {
     return (
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-destructive/10 border border-destructive/20 rounded-xl p-6">
-        <p className="text-destructive font-medium">Error loading clients</p>
-        <p className="text-destructive/80 text-sm mt-1">{error}</p>
-        <button onClick={fetchClients} className="mt-4 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors text-sm font-medium">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        className="bg-red-500/10 backdrop-blur-xl border border-red-500/20 rounded-xl p-8 shadow-xl"
+      >
+        <p className="text-red-400 font-medium text-lg mb-2">Error loading clients</p>
+        <p className="text-white/70 text-sm">{error}</p>
+        <motion.button 
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={fetchClients} 
+          className="mt-6 px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl hover:from-red-600 hover:to-pink-600 transition-all duration-300 text-sm font-medium shadow-lg flex items-center gap-2"
+        >
+          <RefreshCw className="w-4 h-4" />
           Try Again
-        </button>
+        </motion.button>
       </motion.div>
     );
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      <ClientTable
-        title="Corporate Clients"
-        clients={morales}
-        onUpdateClient={updateClient}
-        onMessageSent={markMessaged}
-        onApplyFilters={onApplyFilters}
-        currentFilters={filters}
-      />
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      className="space-y-6"
+    >
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl shadow-xl overflow-hidden">
+        <ClientTable
+          title="Corporate Clients"
+          clients={morales}
+          onUpdateClient={updateClient}
+          onMessageSent={markMessaged}
+          onApplyFilters={onApplyFilters}
+          currentFilters={filters}
+        />
+      </div>
 
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Showing {morales.length} clients</p>
-        <div className="flex items-center gap-2">
-          <button disabled={offset === 0} onClick={() => setOffset((prev) => Math.max(0, prev - limit))} className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg disabled:opacity-50">
+      <div className="flex items-center justify-between px-4">
+        <p className="text-sm text-white/60">
+          Showing {morales.length} clients
+        </p>
+        <div className="flex items-center gap-3">
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            disabled={offset === 0} 
+            onClick={() => setOffset((prev) => Math.max(0, prev - limit))} 
+            className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:bg-white/20"
+          >
             <ChevronLeft className="w-4 h-4" /> Previous
-          </button>
-          <button disabled={!hasMore} onClick={() => setOffset((prev) => prev + limit)} className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg disabled:opacity-50">
+          </motion.button>
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            disabled={!hasMore} 
+            onClick={() => setOffset((prev) => prev + limit)} 
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg"
+          >
             Next <ChevronRight className="w-4 h-4" />
-          </button>
+          </motion.button>
         </div>
       </div>
     </motion.div>

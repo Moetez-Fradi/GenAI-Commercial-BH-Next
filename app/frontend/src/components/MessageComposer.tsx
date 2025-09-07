@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import type { Client, ContactMethod } from "../types/client";
 import Modal from "./Modal";
 import { useAuth } from "../context/AuthContext";
@@ -295,58 +296,71 @@ export default function MessageComposer({
 
   return (
     <Modal open={true} onClose={onClose}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-orange-600">Generated Message</h3>
-        <button onClick={onClose} className="px-2 py-1 rounded hover:bg-gray-100">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-semibold text-white bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text">Generated Message</h3>
+        <motion.button 
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onClose} 
+          className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 text-white/70 hover:text-white"
+        >
           ✕
-        </button>
+        </motion.button>
       </div>
 
       <textarea
         rows={6}
-        className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-orange-400"
+        className="w-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl p-4 text-white placeholder-white/50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all duration-300"
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         placeholder="Your pitch will appear here..."
       />
 
       {/* custom prompt bar: optional user prompt sent to LLM when regenerating */}
-      <div className="mt-3">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Custom prompt (optional)</label>
+      <div className="mt-6">
+        <label className="block text-sm font-medium text-white/70 mb-2">Custom prompt (optional)</label>
         <textarea
           rows={3}
-          className="w-full border rounded-lg p-2 outline-none focus:ring-2 focus:ring-orange-300"
+          className="w-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl p-4 text-white placeholder-white/50 outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all duration-300"
           value={customPrompt}
           onChange={(e) => setCustomPrompt(e.target.value)}
           placeholder="Optional: tweak the tone, emphasise urgency, ask to mention a discount, or request a different CTA. This will be appended to the LLM input when you press Regenerate."
         />
-        <p className="text-xs text-gray-500 mt-1">If provided, this will be sent to the LLM as an extra user prompt when generating.</p>
+        <p className="text-xs text-white/50 mt-2">If provided, this will be sent to the LLM as an extra user prompt when generating.</p>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-3">
-        <button
+      <div className="mt-6 flex flex-wrap gap-3">
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={regenManual}
           disabled={busy}
-          className="px-4 py-2 rounded bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50"
+          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-600 text-white hover:from-purple-700 hover:to-cyan-700 disabled:opacity-50 transition-all duration-300 shadow-lg font-medium"
         >
           {busy ? "Generating..." : "Regenerate"}
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => send("whatsapp")}
           disabled={busy}
-          className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+          className="px-5 py-2.5 rounded-xl bg-white/10 backdrop-blur-xl border border-green-500/20 text-white hover:bg-white/20 disabled:opacity-50 transition-all duration-300 font-medium flex items-center gap-2"
         >
+          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
           WhatsApp
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => send("email")}
           disabled={busy}
-          className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+          className="px-5 py-2.5 rounded-xl bg-white/10 backdrop-blur-xl border border-blue-500/20 text-white hover:bg-white/20 disabled:opacity-50 transition-all duration-300 font-medium flex items-center gap-2"
         >
+          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
           Email
-        </button>
+        </motion.button>
       </div>
     </Modal>
   );
