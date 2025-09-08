@@ -20,9 +20,14 @@ export default function Layout() {
     <div className="flex h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Sidebar */}
       <aside className="w-64 bg-white/10 backdrop-blur-xl border-r border-white/20 text-white flex flex-col relative z-10">
-        <div className="p-6 font-bold text-2xl tracking-wide text-center bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
-          BH Assurance <br />
-          <span className="text-white/80">GENAI</span>
+        <div className="p-6 font-bold text-2xl tracking-wide text-center">
+          <div className="bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
+            BH Assurance
+          </div>
+          <span className="relative inline-block mt-2 text-4xl font-extrabold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-white/90 to-white/40">
+            GENAI
+            <span className="absolute inset-0 blur-md bg-gradient-to-r from-purple-400/40 to-cyan-400/40 -z-10"></span>
+          </span>
         </div>
         <nav className="flex-1 space-y-2 p-4">
           {menu.map((item) => (
