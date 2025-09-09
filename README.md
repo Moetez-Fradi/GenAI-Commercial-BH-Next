@@ -2,7 +2,7 @@
 
 ## Overview
 This project is a **prototype commercial business intelligence platform**, developed for the **BH Next Hackathon**.  
-It integrates **data processing, recommendation systems, scoring, and client communication tools** within a modular backend–frontend architecture.
+It integrates data processing, recommendation systems, scoring, alerts, message-history, and client communication tools within a modular backend–frontend architecture.
 
 ---
 
@@ -29,12 +29,17 @@ It integrates **data processing, recommendation systems, scoring, and client com
 - Data models for storing and retrieving scores  
 
 ### History Tracking
-- Track user and client actions  
-- History APIs, services, models, and schemas  
+- Track user and client actions (message responses, views, etc.)
+- Linked to client and user records so you can view message threads per client
 
 ### Communication
 - Email and WhatsApp integration  
 - Message composer with history tracking in frontend  
+
+### Alerts & Scheduling
+- Scheduled job (cron/worker) runs daily to detect clients/products with close expiry dates.
+- Send notifications to clients when a product's expiration date is near
+
 
 ---
 
@@ -51,12 +56,15 @@ It integrates **data processing, recommendation systems, scoring, and client com
 ![history-messaging](./screenshots/screenshot2.png)
 
 ### Authentication UI
-- Login and signup pages  
+- Login and signup pages 
 - Protected routes for authenticated sessions  
 
-### Navigation & Layout
-- Navbar and layout components for structured navigation  
+### Alerts
+- Display all alerts in one pannel (grouped by client Id)
 
+### Navigation & Layout
+- Navbar and layout components for structured navigation
+- 
 ---
 
 ## Data & Utilities
