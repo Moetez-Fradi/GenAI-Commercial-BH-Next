@@ -14,19 +14,14 @@ class ScoringService:
     def score_all_clients(self, df_contrats, df_clients, df_personne_morale):
         """Score both individual and business clients separately"""
         logger.info("Starting client scoring process...")
-        
-        # Filter contracts for each client type
         individual_client_ids = df_clients['REF_PERSONNE'].unique()
         business_client_ids = df_personne_morale['REF_PERSONNE'].unique()
         
         df_individual_contrats = df_contrats[df_contrats['REF_PERSONNE'].isin(individual_client_ids)]
         df_business_contrats = df_contrats[df_contrats['REF_PERSONNE'].isin(business_client_ids)]
-        
-        # Score individual clients
         logger.info("Scoring individual clients...")
         self.scored_individuals = calculate_individual_scores(df_individual_contrats, df_clients)
         
-        # Score business clients
         logger.info("Scoring business clients...")
         self.scored_businesses = calculate_business_scores(df_business_contrats, df_personne_morale)
         
@@ -66,5 +61,4 @@ class ScoringService:
             self.scored_businesses = pd.read_parquet(business_path)
             logger.info(f"Business scores loaded from {business_path}")
 
-# Global scoring service instance
 scoring_service = ScoringService()

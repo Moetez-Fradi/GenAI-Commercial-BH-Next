@@ -47,7 +47,6 @@ def add_message_to_recommendation(db: Session, ref_personne: str, product: str, 
     recommendations = history.recommendations or []
     found = None
 
-    # find recommendation by product
     for rec in recommendations:
         if rec.get("product") == product:
             found = rec
@@ -62,7 +61,6 @@ def add_message_to_recommendation(db: Session, ref_personne: str, product: str, 
         }
         recommendations.append(found)
 
-    # prepare message dict
     msg_dict = {
         "id": msg_in.id or str(uuid.uuid4()),
         "channel": msg_in.channel,
@@ -71,8 +69,6 @@ def add_message_to_recommendation(db: Session, ref_personne: str, product: str, 
     }
 
     found.setdefault("messages", []).append(msg_dict)
-
-    # update and save
     history.recommendations = recommendations
     db.add(history)
     db.commit()

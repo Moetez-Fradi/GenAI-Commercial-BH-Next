@@ -36,10 +36,10 @@ app.include_router(whatsapp_router, prefix="/whatsapp", tags=["WhatsApp"])
 app.include_router(alerts_router.router,prefix="/alerts",tags=["alerts"])
 app.include_router(contracts_router, prefix="/contracts", tags=["contracts"])
 
-# @app.on_event("startup")
-# async def on_startup():
-#     start_scheduler()
+@app.on_event("startup")
+async def on_startup():
+    start_scheduler()
 
-# @app.on_event("shutdown")
-# async def on_shutdown():
-#     stop_scheduler()
+@app.on_event("shutdown")
+async def on_shutdown():
+    stop_scheduler()

@@ -12,13 +12,12 @@ class BatchProcessor:
         results = []
         total_clients = len(df_scored)
         
-        # Filter out already processed clients if in resume mode
         if self.resume_mode:
             df_to_process = df_scored[~df_scored['REF_PERSONNE'].isin(self.processed_clients)]
             logger.info(f"Resuming from {len(self.processed_clients)} processed clients. {len(df_to_process)} remaining.")
         else:
             df_to_process = df_scored
-            self.processed_clients = set()  # Reset if not resuming
+            self.processed_clients = set()
             self.current_batch = 0
         
         total_to_process = len(df_to_process)
@@ -29,17 +28,14 @@ class BatchProcessor:
             
             logger.info(f"Processing batch {self.current_batch + 1}: clients {start_idx + 1}-{end_idx} of {total_to_process}")
             
-            # Process the batch
             batch_results = process_function(batch, *args, **kwargs)
             results.extend(batch_results)
             
-            # Update processed clients
             self.processed_clients.update(batch['REF_PERSONNE'].tolist())
             self.current_batch += 1
             
             logger.info(f"Completed batch {self.current_batch}. Total processed: {len(self.processed_clients)}")
         
-        # Reset resume mode after completion
         self.resume_mode = False
         
         return results
@@ -60,5 +56,4 @@ class BatchProcessor:
         self.resume_mode = False
         logger.info("Batch processor reset")
 
-# Global batch processor instance
 batch_processor = BatchProcessor(batch_size=ALERT_CONFIG['batch_size'])

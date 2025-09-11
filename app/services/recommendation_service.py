@@ -13,14 +13,11 @@ class RecommendationService:
         self.alerts = pd.DataFrame()
     
     def generate_recommendations(self, df_scored, df_contrats, df_products, df_sinistres=None):
-        """Generate recommendations for scored clients - separate individual and business"""
         logger.info("Starting recommendation generation...")
         
-        # Separate individual and business clients
         individual_clients = df_scored[df_scored['client_type'] == 'individual']
         business_clients = df_scored[df_scored['client_type'] == 'business']
         
-        # Process in batches
         individual_recs = batch_processor.process_in_batches(
             individual_clients, self._process_individual_batch, 
             df_contrats, df_products, df_sinistres
@@ -31,11 +28,9 @@ class RecommendationService:
             df_contrats, df_products, df_sinistres
         )
         
-        # Store separately
         self.individual_recommendations = pd.DataFrame(individual_recs)
         self.business_recommendations = pd.DataFrame(business_recs)
         
-        # Generate alerts
         self.alerts = generate_alerts(df_contrats)
         
         logger.info(f"Generated {len(self.individual_recommendations)} individual recommendations")
@@ -45,7 +40,6 @@ class RecommendationService:
         return self.individual_recommendations, self.business_recommendations, self.alerts
     
     def _process_individual_batch(self, batch, df_contrats, df_products, df_sinistres):
-        """Process a batch of individual clients with enhanced logic"""
         results = []
         
         for _, client_row in batch.iterrows():
@@ -53,7 +47,6 @@ class RecommendationService:
                 client_row, df_contrats, df_products, df_sinistres
             )
             
-            # Calculate budget
             budget = self._calculate_budget(client_row, 'individual')
             
             results.append({
@@ -75,7 +68,6 @@ class RecommendationService:
         return results
     
     def _process_business_batch(self, batch, df_contrats, df_products, df_sinistres):
-        """Process a batch of business clients with enhanced logic"""
         results = []
         
         for _, client_row in batch.iterrows():
@@ -83,7 +75,6 @@ class RecommendationService:
                 client_row, df_contrats, df_products, df_sinistres
             )
             
-            # Calculate budget
             budget = self._calculate_budget(client_row, 'business')
             
             results.append({
@@ -106,7 +97,6 @@ class RecommendationService:
         return results
     
     def _calculate_budget(self, client_row, client_type):
-        """Calculate insurance budget based on client type and history"""
         config = BUDGET_CONFIG[client_type]
         
         if client_type == 'individual':
@@ -117,7 +107,7 @@ class RecommendationService:
                 avg_premium * 3,
                 config['minimum']
             )
-        else:  # business
+        else:
             total_premiums = client_row.get('total_premiums_paid', 0)
             total_capital = client_row.get('total_capital_assured', 0)
             return max(
@@ -127,7 +117,6 @@ class RecommendationService:
             )
     
     def get_recommendations(self, client_type='all'):
-        """Get recommendations by client type"""
         if client_type == 'individual':
             return self.individual_recommendations
         elif client_type == 'business':
@@ -136,7 +125,6 @@ class RecommendationService:
             return pd.concat([self.individual_recommendations, self.business_recommendations], ignore_index=True)
     
     def save_recommendations(self, individual_path, business_path):
-        """Save recommendations to separate files"""
         if not self.individual_recommendations.empty:
             self.individual_recommendations.to_parquet(individual_path, index=False)
             logger.info(f"Individual recommendations saved to {individual_path}")
@@ -146,10 +134,8 @@ class RecommendationService:
             logger.info(f"Business recommendations saved to {business_path}")
     
     def save_alerts(self, filepath):
-        """Save alerts to file"""
         if not self.alerts.empty:
             self.alerts.to_parquet(filepath, index=False)
             logger.info(f"Alerts saved to {filepath}")
 
-# Global recommendation service instance
 recommendation_service = RecommendationService()

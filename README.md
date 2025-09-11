@@ -44,22 +44,36 @@ It integrates data processing, recommendation systems, scoring, alerts, message-
 ---
 
 ## Frontend Features
+<p align="center">
+  <img src="./screenshots/Screenshot1.png" alt="Dashboard 1" width="45%" />
+</p>
 
 ### Client Dashboard
 - Client list with detail popups  
-- Status badges for client states  
-![dashboard](./screenshots/screenshot1.png)
+- Status badges for client states
+- Filtering and Sorting supported 
+<p align="center">
+  <img src="./screenshots/Screenshot3.png" alt="Dashboard 1" width="45%" />
+  <img src="./screenshots/Screenshot4.png" alt="Dashboard 2" width="45%" />
+</p>
 
 ### History & Messaging
 - History table for tracking recommendations and actions  
 - Message composer and modals for sending/viewing messages  
-![history-messaging](./screenshots/screenshot2.png)
+<p align="center">
+  <img src="./screenshots/Screenshot5.png" alt="Dashboard 1" width="45%" />
+  <img src="./screenshots/Screenshot6.png" alt="Dashboard 2" width="45%" />
+</p>
+![Main landing page](./screenshots/Screenshot8.png)
+
 
 ### Authentication UI
+![Main landing page](./screenshots/Screenshot2.png)
 - Login and signup pages 
 - Protected routes for authenticated sessions  
 
 ### Alerts
+![Main landing page](./screenshots/Screenshot7.png)
 - Display all alerts in one pannel (grouped by client Id)
 
 ### Navigation & Layout

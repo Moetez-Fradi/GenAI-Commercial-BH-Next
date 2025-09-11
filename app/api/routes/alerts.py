@@ -55,31 +55,23 @@ def create_alert(payload: AlertCreate, db: Session = Depends(get_db)):
 def list_alerts(
     db: Session = Depends(get_db),
 
-    # pagination
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
     include_total: bool = Query(False),
 
-    # filters
     severity: Optional[List[Literal["High"]]] = Query(None),
     alert_type: Optional[List[str]] = Query(None),
     product: Optional[List[str]] = Query(None),
-
-    # sorting
     sort_by: Optional[Literal["expiry", "ref"]] = Query(None),
     sort_dir: Optional[Literal["asc", "desc"]] = Query("desc"),
 ):
     q = db.query(Alert)
-
-    # Apply filters
     if severity:
         q = q.filter(Alert.alert_severity.in_(severity))
     if alert_type:
         q = q.filter(Alert.alert_type.in_(alert_type))
     if product:
         q = q.filter(Alert.product.in_(product))
-
-    # Apply sorting
     if sort_by == "expiry":
         order_clauses = mysql_order_with_nulls_last(
             primary_col=Alert.days_until_expiry,
@@ -88,7 +80,6 @@ def list_alerts(
         )
         q = q.order_by(*order_clauses)
     else:
-        # Default sort by REF_PERSONNE
         q = q.order_by(asc(Alert.REF_PERSONNE) if sort_dir == "asc" else desc(Alert.REF_PERSONNE))
 
     items = q.limit(limit).offset(offset).all()

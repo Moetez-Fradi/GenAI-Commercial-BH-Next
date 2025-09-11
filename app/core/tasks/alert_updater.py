@@ -1,19 +1,16 @@
-# app/tasks/alert_updater.py
 import os
 import sys
 import logging
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.orm import Session
 from dateutil import parser as date_parser
-from datetime import datetime, timedelta
 
 from app.db.base import SessionLocal
 from app.models.contract import Contract
 from app.models.alerts import Alert
-import asyncio
 
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(level=logging.INFO, stream=sys.stdout, format=LOG_FORMAT)
@@ -51,7 +48,6 @@ def run_alert_sync_once_sync(max_scan: int = 1000):
         today = datetime.now().date()
         cutoff_date = today + timedelta(days=15)
 
-        # Query only non-expired contracts
         q = (
             session.query(Contract)
             .filter(Contract.DATE_EXPIRATION != None)
@@ -61,12 +57,9 @@ def run_alert_sync_once_sync(max_scan: int = 1000):
         contracts = q.limit(max_scan).all()
         print(f"[alert_updater pid={pid}] Materialized {len(contracts)} contracts (limit={max_scan})", flush=True)
 
-        # Counters
         parsed_count = created = updated = skipped_no_ref = skipped_unparseable = skipped_expired = 0
         parse_fail_samples = []
         close_samples = []
-
-        # Temporary dict to hold best contract per REF_PERSONNE
         best_contracts = {}
 
         for c in contracts:
@@ -92,7 +85,6 @@ def run_alert_sync_once_sync(max_scan: int = 1000):
                 skipped_no_ref += 1
                 continue
 
-            # Only keep the contract with the closest expiration per REF_PERSONNE
             if ref not in best_contracts or exp_dt < best_contracts[ref]["exp_dt"]:
                 best_contracts[ref] = {
                     "num_contrat": num_contrat,
@@ -101,7 +93,6 @@ def run_alert_sync_once_sync(max_scan: int = 1000):
                     "days_until": days_until,
                 }
 
-        # Now apply inserts/updates per REF_PERSONNE
         for ref, data in best_contracts.items():
             exp_dt = data["exp_dt"]
             days_until = data["days_until"]
@@ -170,7 +161,6 @@ def run_alert_sync_once_sync(max_scan: int = 1000):
         print(f"[alert_updater pid={pid}] Finished alert sync at {datetime.now().isoformat()}", flush=True)
         logger.info("Alert sync finished (sync) (pid=%d)", pid)
 
-
 async def run_alert_sync_once():
     pid = os.getpid()
     print(f"[alert_updater pid={pid}] Running alert sync wrapper at {datetime.now().isoformat()}", flush=True)
@@ -190,7 +180,6 @@ async def run_alert_sync_once():
     logger.info("run_alert_sync_once wrapper completed (pid=%d)", pid)
     print(f"[alert_updater pid={pid}] Completed alert sync wrapper at {datetime.now().isoformat()}", flush=True)
 
-# --- scheduler ---
 scheduler = AsyncIOScheduler()
 
 def start_scheduler():

@@ -20,24 +20,17 @@ class SQLTransformer:
             where_condition: Optional WHERE condition to filter rows
         """
         try:
-            # Read Parquet file
             df = pd.read_parquet(parquet_path)
-            
-            # Filter columns if specified
             if columns:
                 missing_cols = set(columns) - set(df.columns)
                 if missing_cols:
                     logger.warning(f"Columns not found in data: {missing_cols}")
                 df = df[[col for col in columns if col in df.columns]]
             
-            # Apply WHERE condition if specified
             if where_condition:
                 df = df.query(where_condition)
             
-            # Generate SQL file
             sql_content = self._generate_sql_inserts(df, table_name)
-            
-            # Save to file
             sql_filename = f"{table_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql"
             sql_path = os.path.join(self.output_dir, sql_filename)
             
@@ -57,13 +50,11 @@ class SQLTransformer:
         """Generate SQL INSERT statements from DataFrame"""
         sql_lines = []
         
-        # Add header
         sql_lines.append(f"-- SQL INSERT statements for table: {table_name}")
         sql_lines.append(f"-- Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         sql_lines.append(f"-- Total rows: {len(df)}")
         sql_lines.append("")
         
-        # Process each row
         for _, row in df.iterrows():
             columns = []
             values = []
@@ -78,7 +69,6 @@ class SQLTransformer:
                 elif isinstance(value, (pd.Timestamp, datetime)):
                     values.append(f"'{value.strftime('%Y-%m-%d %H:%M:%S')}'")
                 else:
-                    # Escape single quotes for SQL
                     escaped_value = str(value).replace("'", "''")
                     values.append(f"'{escaped_value}'")
             
@@ -134,20 +124,16 @@ class SQLTransformer:
         try:
             df = pd.read_parquet(parquet_path)
             
-            # Filter columns if specified
             if columns:
                 df = df[[col for col in columns if col in df.columns]]
             
             ddl_lines = []
             ddl_lines.append(f"CREATE TABLE {table_name} (")
             
-            # Add columns
             column_defs = []
             for col in df.columns:
                 col_type = self._infer_sql_type(df[col])
                 column_defs.append(f"    {col} {col_type}")
-            
-            # Add primary key if specified
             if primary_key and primary_key in df.columns:
                 column_defs.append(f"    PRIMARY KEY ({primary_key})")
             
@@ -156,7 +142,6 @@ class SQLTransformer:
             
             ddl_content = "\n".join(ddl_lines)
             
-            # Save DDL to file
             ddl_filename = f"create_{table_name}.sql"
             ddl_path = os.path.join(self.output_dir, ddl_filename)
             
@@ -183,7 +168,6 @@ class SQLTransformer:
         elif pd.api.types.is_bool_dtype(dtype):
             return "BOOLEAN"
         else:
-            # For strings, find max length
             max_length = series.astype(str).str.len().max()
             if pd.isna(max_length):
                 max_length = 50
@@ -191,5 +175,4 @@ class SQLTransformer:
                 max_length = min(int(max_length * 1.5), 4000)  # Add buffer, cap at 4000
             return f"VARCHAR({max_length})"
 
-# Global SQL transformer instance
 sql_transformer = SQLTransformer()
