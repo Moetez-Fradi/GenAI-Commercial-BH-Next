@@ -44,37 +44,37 @@ It integrates data processing, recommendation systems, scoring, alerts, message-
 ---
 
 ## Frontend Features
+
 <p align="center">
-  <img src="./screenshots/Screenshot1.png" alt="Dashboard 1" width="45%" />
+  <img src="./screenshots/Screenshot1.png" alt="Main landing page with slogan" width="90%">
 </p>
 
 ### Client Dashboard
-- Client list with detail popups  
-- Status badges for client states
-- Filtering and Sorting supported 
 <p align="center">
-  <img src="./screenshots/Screenshot3.png" alt="Dashboard 1" width="45%" />
-  <img src="./screenshots/Screenshot4.png" alt="Dashboard 2" width="45%" />
+  <img src="./screenshots/Screenshot3.png" alt="Business clients dashboard" width="45%" />
+  <img src="./screenshots/Screenshot4.png" alt="Physical clients dashboard with filters applied" width="45%" />
 </p>
 
 ### History & Messaging
-- History table for tracking recommendations and actions  
-- Message composer and modals for sending/viewing messages  
 <p align="center">
-  <img src="./screenshots/Screenshot5.png" alt="Dashboard 1" width="45%" />
-  <img src="./screenshots/Screenshot6.png" alt="Dashboard 2" width="45%" />
+  <img src="./screenshots/Screenshot5.png" alt="History dashboard showing client interactions" width="45%" />
+  <img src="./screenshots/Screenshot6.png" alt="Example history entry with threaded messages" width="45%" />
 </p>
-![Main landing page](./screenshots/Screenshot8.png)
 
+### Recommendation Generation
+<p align="center">
+  <img src="./screenshots/Screenshot8.png" alt="Recommendation generation popup with Email and WhatsApp buttons" width="60%" />
+</p>
 
 ### Authentication UI
-![Main landing page](./screenshots/Screenshot2.png)
-- Login and signup pages 
-- Protected routes for authenticated sessions  
+<p align="center">
+  <img src="./screenshots/Screenshot2.png" alt="Login and signup pages" width="60%" />
+</p>
 
 ### Alerts
-![Main landing page](./screenshots/Screenshot7.png)
-- Display all alerts in one pannel (grouped by client Id)
+<p align="center">
+  <img src="./screenshots/Screenshot7.png" alt="Alerts dashboard grouped by client and expiry status" width="60%" />
+</p>
 
 ### Navigation & Layout
 - Navbar and layout components for structured navigation
