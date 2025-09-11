@@ -46,7 +46,7 @@ It integrates data processing, recommendation systems, scoring, alerts, message-
 ## Frontend Features
 
 <p align="center">
-  <img src="./screenshots/Screenshot1.png" alt="Main landing page with slogan" width="90%">
+  <img src="./screenshots/screenshot1.png" alt="Main landing page with slogan" width="90%">
 </p>
 
 ### Client Dashboard
@@ -68,7 +68,7 @@ It integrates data processing, recommendation systems, scoring, alerts, message-
 
 ### Authentication UI
 <p align="center">
-  <img src="./screenshots/Screenshot2.png" alt="Login and signup pages" width="60%" />
+  <img src="./screenshots/screenshot2.png" alt="Login and signup pages" width="60%" />
 </p>
 
 ### Alerts
